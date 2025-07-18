@@ -10,7 +10,6 @@ class GalloForm(forms.ModelForm):
             'nroPlaca': forms.TextInput(attrs={'class': 'form-control'}),
             'sexo': forms.Select(attrs={'class': 'form-select'}),
             'tipoGallo': forms.Select(attrs={'class': 'form-select'}),
-            #'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'nombre_img': forms.FileInput(attrs={'class': 'form-control'}),
             'peso': forms.NumberInput(attrs={'class': 'form-control'}),
             'nroPlacaAnterior': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -43,10 +42,29 @@ class GalloForm(forms.ModelForm):
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    nroPlaca = forms.ModelChoiceField(
+        queryset=PlacaCheck.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label="Número de Placa"
+    )
+    nroPlacaAnterior = forms.ModelChoiceField(
+        queryset=PlacaCheck.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False,
+        label="Número de Placa Anterior"
+    )
+    peso = forms.ModelChoiceField(
+        queryset=PesosCheck.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=True,
+        label="Peso (libras)"
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         hoy = date.today().strftime('%Y-%m-%d')
         self.fields['fechaNac'].widget.attrs['max'] = hoy
+        self.fields['fechaMuerte'].required = False
 
 class EncuentroForm(forms.ModelForm):
     class Meta:
@@ -58,9 +76,9 @@ class EncuentroForm(forms.ModelForm):
             'resultado', 'condicionGallo', 'imagen_evento',
         ]
         widgets = {
-            'fechaYHora': forms.DateTimeInput(
-                attrs={'type': 'datetime-local'},
-                format='%Y-%m-%dT%H:%M'
+            'fechaYHora': forms.DateInput(
+                attrs={'type': 'date'},
+                format='%Y-%m-%d'
             ),
             'video': forms.ClearableFileInput(attrs={'accept': 'video/*'}),
             'resultado': forms.Select(attrs={'class': 'form-select'}),

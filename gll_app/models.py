@@ -60,9 +60,19 @@ class DuenoAnterior(models.Model):
     def __str__(self):
         return self.nombre
 
+class PlacaCheck(models.Model):
+    nroPlaca = models.AutoField(primary_key=True)
+    def __str__(self):
+        return str(self.nroPlaca)
+
+class PesosCheck(models.Model):
+    peso = models.DecimalField(unique=True, decimal_places=2, max_digits=10, validators=[MinValueValidator(0)])
+    def __str__(self):
+        return str(self.peso)
+
 class Gallo(models.Model):
     idGallo = models.AutoField(primary_key=True)
-    nroPlaca = models.IntegerField(unique=True, null=True, blank=True)
+    nroPlaca = models.ForeignKey(PlacaCheck, null=True, blank=False, on_delete=models.PROTECT, related_name='gallo_por_placa')
     fechaNac = models.DateField(null=True)
     color = models.ForeignKey(Color, on_delete=models.PROTECT)
     sexo = models.CharField(max_length=1, choices=[('M', 'Macho'), ('H', 'Hembra')])
@@ -72,23 +82,23 @@ class Gallo(models.Model):
         ('MADRE', 'Gallina madre')
     ])
 
-    peso = models.DecimalField(decimal_places=2, default=0, max_digits=10, validators=[MinValueValidator(0)])
-    nroPlacaAnterior = models.IntegerField(null=True, blank=True)
+    peso = models.ForeignKey(PesosCheck, on_delete=models.PROTECT)
+    nroPlacaAnterior = models.ForeignKey(PlacaCheck, null=True, blank=False, on_delete=models.PROTECT, related_name='gallo_por_placa_anterior')
     nombreDuenoAnterior = models.ForeignKey(DuenoAnterior, on_delete=models.PROTECT, null=True)
     estadoDeSalud = models.ForeignKey(Estado, on_delete=models.PROTECT)
-    fechaMuerte = models.DateField(null=True, blank=True)
+    fechaMuerte = models.DateField(null=True, blank=False)
 
     #observaciones = models.TextField()
     nombre_img = models.ImageField(upload_to=imagen_upload_path)
-    placaPadre = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='hijos_padre')
-    placaMadre = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='hijos_madre')
+    placaPadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_padre')
+    placaMadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_madre')
 
     def __str__(self):
         return f"Gallo {self.nroPlaca}"
 
 class Encuentro(models.Model):
     idEncuentro = models.AutoField(primary_key=True)
-    fechaYHora = models.DateTimeField(null=False)
+    fechaYHora = models.DateField(null=False)
     galpon1 = models.ForeignKey(Galpon, on_delete=models.PROTECT, related_name='galpon1')
     galpon2 = models.ForeignKey(Galpon, on_delete=models.PROTECT, related_name='galpon2')
     gallo = models.ForeignKey(Gallo, on_delete=models.PROTECT)

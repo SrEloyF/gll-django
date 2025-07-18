@@ -20,35 +20,25 @@
         <div class="row g-3">
           <!-- Datos básicos -->
           <div class="col-12 col-md-6">
-            <div class="form-floating mb-3">
-              <select class="form-select">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
-                <option>9</option>
-                <option>10</option>
-              </select>
-              <label for="{{ form.nroPlaca.id_for_label }}">Número de Placa <span class="text-danger">*</span></label>
-
-              {# Error container siempre presente, inicialmente oculto #}
+            <div class="form-floating mb-3 position-relative">
+              {{ form.nroPlaca }}
+              <label for="{{ form.nroPlaca.id_for_label }}">Número de Placa</label>
               <div id="placa-error" class="invalid-feedback" style="display: none;"></div>
-
               {% if form.nroPlaca.errors %}
-                {# Si ya venían errores del servidor, los volcamos dentro #}
-                <script>
-                  document.addEventListener('DOMContentLoaded', () => {
-                    const errDiv = document.getElementById('placa-error');
-                    errDiv.textContent = '{{ form.nroPlaca.errors.as_text|escapejs }}';
-                    errDiv.style.display = 'block';
-                    document.getElementById('id_nroPlaca').classList.add('is-invalid');
-                  });
-                </script>
+              <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                  const errDiv = document.getElementById('placa-error');
+                  errDiv.textContent = '{{ form.nroPlaca.errors.as_text|escapejs }}';
+                  errDiv.style.display = 'block';
+                  document.getElementById('id_nroPlaca').classList.add('is-invalid');
+                });
+              </script>
               {% endif %}
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <button class="btn btn-success ms-2" id="btnAniadirPlaca" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -102,38 +92,29 @@
           </div>
 
           <div class="col-12 col-md-6">
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3 position-relative">
               {{ form.peso }}
               <label for="{{ form.peso.id_for_label }}">Peso (libras) <span class="text-danger">*</span></label>
               {% if form.peso.errors %}
               <div class="invalid-feedback d-block">{{ form.peso.errors }}</div>
               {% endif %}
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <button class="btn btn-success ms-2" id="btnAniadirPeso" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
             </div>
           </div>
 
           <div class="col-12 col-md-6">
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3 position-relative">
               {{ form.nroPlacaAnterior }}
               <label for="{{ form.nroPlacaAnterior.id_for_label }}">Número de Placa Anterior</label>
               {% if form.nroPlacaAnterior.errors %}
               <div class="invalid-feedback d-block">{{ form.nroPlacaAnterior.errors }}</div>
               {% endif %}
-            </div>
-          </div>
-
-          <div class="col-12 col-md-6">
-            <div class="form-floating mb-3">
-              {{ form.nombreDuenoAnterior }}
-              <label for="{{ form.nombreDuenoAnterior.id_for_label }}">Nombre del Dueño Anterior</label>
-              {% if form.nombreDuenoAnterior.errors %}
-                <div class="invalid-feedback d-block">{{ form.nombreDuenoAnterior.errors }}</div>
-              {% endif %}
-
               <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
-                <div class="input-group-text">
-                  <i class="bi bi-person-fill text-primary"></i>
-                </div>
-                <button class="btn btn-success ms-2" id="btnAniadirDuenoAnterior" type="button">
+                <button class="btn btn-success ms-2" id="btnAniadirPlacaAnterior" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
               </div>
@@ -406,203 +387,339 @@
   document.addEventListener('DOMContentLoaded', function () {
     addUpperCaseListenerToSwalInputs();
 
-  const inputPlaca = document.getElementById('id_nroPlaca');
-  const errDiv     = document.getElementById('placa-error');
-  const submitBtn  = document.getElementById('submit-btn');
+    const inputPlaca = document.getElementById('id_nroPlaca');
+    const errDiv = document.getElementById('placa-error');
+    const submitBtn = document.getElementById('submit-btn');
 
-  inputPlaca.addEventListener('blur', function() {
-    const placa = this.value.trim();
-    if (!placa) {
-      this.classList.remove('is-invalid');
-      errDiv.textContent = '';
-      errDiv.style.display = 'none';
-      submitBtn.disabled = false;
-      return;
+    inputPlaca.addEventListener('blur', function () {
+      const placa = this.value.trim();
+      if (!placa) {
+        this.classList.remove('is-invalid');
+        errDiv.textContent = '';
+        errDiv.style.display = 'none';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      fetch('{% url "ajax_valida_placa" %}?placa=' + encodeURIComponent(placa))
+        .then(res => res.json())
+        .then(data => {
+          if (data.exists) {
+            this.classList.add('is-invalid');
+            errDiv.textContent = 'La placa ya está registrada.';
+            errDiv.style.display = 'block';
+            submitBtn.disabled = true;
+          } else {
+            this.classList.remove('is-invalid');
+            errDiv.textContent = '';
+            errDiv.style.display = 'none';
+            submitBtn.disabled = false;
+          }
+        })
+        .catch(err => {
+          console.error('Error en la validación AJAX:', err);
+          submitBtn.disabled = true;
+        });
+    });
+
+
+    function añadirEstado(selectId) {
+      Swal.fire({
+        title: 'Ingresa nuevo estado:',
+        input: 'text',
+        inputPlaceholder: 'Introduce el nombre aquí',
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa algo!');
+          }
+          return inputValue;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const nombre = result.value;
+
+          fetch("{% url 'estado_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nombre': nombre,
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const selectEstado = document.getElementById(selectId);
+                const nuevaOpcionEstado = document.createElement('option');
+                nuevaOpcionEstado.value = data.id;
+                nuevaOpcionEstado.textContent = data.nombre;
+                selectEstado.appendChild(nuevaOpcionEstado);
+                nuevaOpcionEstado.selected = true;
+                Swal.fire('¡Éxito!', 'Estado registrado correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
     }
 
-    fetch('{% url "ajax_valida_placa" %}?placa=' + encodeURIComponent(placa))
-      .then(res => res.json())
-      .then(data => {
-        if (data.exists) {
-          this.classList.add('is-invalid');
-          errDiv.textContent = 'La placa ya está registrada.';
-          errDiv.style.display = 'block';
-          submitBtn.disabled = true;
-        } else {
-          this.classList.remove('is-invalid');
-          errDiv.textContent = '';
-          errDiv.style.display = 'none';
-          submitBtn.disabled = false;
+    function añadirColor(selectId) {
+      Swal.fire({
+        title: 'Ingresa nuevo color:',
+        input: 'text',
+        inputPlaceholder: 'Introduce el nombre aquí',
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa algo!');
+          }
+          return inputValue;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const nombre = result.value;
+
+          fetch("{% url 'color_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nombre': nombre,
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const selectColor = document.getElementById(selectId);
+                const nuevaOpcionColor = document.createElement('option');
+                nuevaOpcionColor.value = data.id;
+                nuevaOpcionColor.textContent = data.nombre;
+                selectColor.appendChild(nuevaOpcionColor);
+                nuevaOpcionColor.selected = true;
+
+                Swal.fire('¡Éxito!', 'Color registrado correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
+    }
+
+    function añadirDuenoAnterior(selectId) {
+      Swal.fire({
+        title: 'Ingresa nombre del dueño anterior:',
+        input: 'text',
+        inputPlaceholder: 'Introduce el nombre aquí',
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa algo!');
+          }
+          return inputValue;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const nombre = result.value;
+
+          fetch("{% url 'duenoanterior_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nombre': nombre,
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const selectDuenoAnterior = document.getElementById(selectId);
+
+                const nuevaOpcionDuenoAnterior = document.createElement('option');
+                nuevaOpcionDuenoAnterior.value = data.id;
+                nuevaOpcionDuenoAnterior.textContent = data.nombre;
+
+                selectDuenoAnterior.appendChild(nuevaOpcionDuenoAnterior);
+                nuevaOpcionDuenoAnterior.selected = true;
+
+                Swal.fire('¡Éxito!', 'Dueño anterior registrado correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
+    }
+
+    function añadirPlaca(selectId) {
+      Swal.fire({
+        title: 'Ingresa nueva placa:',
+        input: 'number',
+        inputPlaceholder: 'Introduce el número aquí',
+        inputAttributes: {
+          min: 1,
+          step: 1
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          const value = Number(inputValue);
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa un número!');
+          } else if (!Number.isInteger(value) || value <= 0) {
+            Swal.showValidationMessage('Debes ingresar un número entero positivo.');
+          }
+          return value;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const nroPlaca = result.value;
+          fetch("{% url 'placa_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nroPlaca': nroPlaca,
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Añadir la opción en ambos selects
+                ['id_nroPlaca', 'id_nroPlacaAnterior'].forEach(function (selectName) {
+                  const select = document.getElementById(selectName);
+                  if (select) {
+                    const nuevaOpcion = document.createElement('option');
+                    nuevaOpcion.value = data.id;
+                    nuevaOpcion.textContent = data.nroPlaca;
+                    select.appendChild(nuevaOpcion);
+                    // Selecciona solo el select que disparó el evento
+                    if (selectName === selectId) {
+                      nuevaOpcion.selected = true;
+                    }
+                  }
+                });
+                Swal.fire('¡Éxito!', 'Placa registrada correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
+    }
+
+    function añadirPeso(selectId) {
+      Swal.fire({
+        title: 'Ingresa nuevo peso:',
+        input: 'text',
+        inputPlaceholder: 'Introduce el peso aquí',
+        inputAttributes: {
+          pattern: '^\\d*\\.?\\d+$',
+          title: 'Por favor, ingresa un número válido'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          const regex = /^(\d+(\.\d{1,2})?)?$/;
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa un peso!');
+          } else if (!regex.test(inputValue)) {
+            Swal.showValidationMessage('El peso debe ser un número válido con hasta dos decimales.');
+          } else {
+            const value = Number(inputValue);
+            if (value <= 0) {
+              Swal.showValidationMessage('Debes ingresar un peso positivo.');
+            }
+            return value;
+          }
         }
       })
-      .catch(err => {
-        console.error('Error en la validación AJAX:', err);
-        submitBtn.disabled = true;
-      });});
-
-
-  function añadirEstado(selectId) {
-    Swal.fire({
-      title: 'Ingresa nuevo estado:',
-      input: 'text',
-      inputPlaceholder: 'Introduce el nombre aquí',
-      showCancelButton: true,
-      confirmButtonText: 'Registrar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: (inputValue) => {
-        if (!inputValue) {
-          Swal.showValidationMessage('¡Por favor, ingresa algo!');
-        }
-        return inputValue;
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const nombre = result.value;
-
-        fetch("{% url 'estado_create_ajax' %}", {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-          },
-          body: new URLSearchParams({
-            'nombre': nombre,
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const selectEstado = document.getElementById(selectId);
-            const nuevaOpcionEstado = document.createElement('option');
-            nuevaOpcionEstado.value = data.id;
-            nuevaOpcionEstado.textContent = data.nombre;
-            selectEstado.appendChild(nuevaOpcionEstado);
-            nuevaOpcionEstado.selected = true;
-            Swal.fire('¡Éxito!', 'Estado registrado correctamente.', 'success');
-          } else {
-            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+        .then((result) => {
+          if (result.isConfirmed) {
+            const peso = result.value;
+            fetch("{% url 'peso_create_ajax' %}", {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+              },
+              body: new URLSearchParams({
+                'peso': peso,
+              })
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  const selectPeso = document.getElementById(selectId);
+                  const nuevaOpcionPeso = document.createElement('option');
+                  nuevaOpcionPeso.value = data.id;
+                  nuevaOpcionPeso.textContent = data.peso;
+                  selectPeso.appendChild(nuevaOpcionPeso);
+                  nuevaOpcionPeso.selected = true;
+                  Swal.fire('¡Éxito!', 'Peso registrado correctamente.', 'success');
+                } else {
+                  Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+                }
+              })
+              .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'Error en la petición.', 'error');
+              });
           }
-        })
-        .catch(error => {
-          console.error(error);
-          Swal.fire('Error', 'Error en la petición.', 'error');
         });
-      }
+    }
+
+    document.getElementById('btnAniadirPeso').addEventListener('click', function () {
+      añadirPeso('id_peso');
     });
-  }
 
-  function añadirColor(selectId) {
-    Swal.fire({
-      title: 'Ingresa nuevo color:',
-      input: 'text',
-      inputPlaceholder: 'Introduce el nombre aquí',
-      showCancelButton: true,
-      confirmButtonText: 'Registrar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: (inputValue) => {
-        if (!inputValue) {
-          Swal.showValidationMessage('¡Por favor, ingresa algo!');
-        }
-        return inputValue;
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const nombre = result.value;
-
-        fetch("{% url 'color_create_ajax' %}", {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-          },
-          body: new URLSearchParams({
-            'nombre': nombre,
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const selectColor = document.getElementById(selectId);
-            const nuevaOpcionColor = document.createElement('option');
-            nuevaOpcionColor.value = data.id;
-            nuevaOpcionColor.textContent = data.nombre;
-            selectColor.appendChild(nuevaOpcionColor);
-            nuevaOpcionColor.selected = true;
-
-            Swal.fire('¡Éxito!', 'Color registrado correctamente.', 'success');
-          } else {
-            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
-          }
-        })
-        .catch(error => {
-          console.error(error);
-          Swal.fire('Error', 'Error en la petición.', 'error');
-        });
-      }
+    document.getElementById('btnAniadirPlaca').addEventListener('click', function () {
+      añadirPlaca('id_nroPlaca');
     });
-  }
-
-  function añadirDuenoAnterior(selectId) {
-    Swal.fire({
-      title: 'Ingresa nombre del dueño anterior:',
-      input: 'text',
-      inputPlaceholder: 'Introduce el nombre aquí',
-      showCancelButton: true,
-      confirmButtonText: 'Registrar',
-      cancelButtonText: 'Cancelar',
-      preConfirm: (inputValue) => {
-        if (!inputValue) {
-          Swal.showValidationMessage('¡Por favor, ingresa algo!');
-        }
-        return inputValue;
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const nombre = result.value;
-
-        fetch("{% url 'duenoanterior_create_ajax' %}", {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-          },
-          body: new URLSearchParams({
-            'nombre': nombre,
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const selectDuenoAnterior = document.getElementById(selectId);
-
-            const nuevaOpcionDuenoAnterior = document.createElement('option');
-            nuevaOpcionDuenoAnterior.value = data.id;
-            nuevaOpcionDuenoAnterior.textContent = data.nombre;
-
-            selectDuenoAnterior.appendChild(nuevaOpcionDuenoAnterior);
-            nuevaOpcionDuenoAnterior.selected = true;
-
-            Swal.fire('¡Éxito!', 'Dueño anterior registrado correctamente.', 'success');
-          } else {
-            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
-          }
-        })
-        .catch(error => {
-          console.error(error);
-          Swal.fire('Error', 'Error en la petición.', 'error');
-        });
-      }
+    document.getElementById('btnAniadirPlacaAnterior').addEventListener('click', function () {
+      añadirPlaca('id_nroPlacaAnterior');
     });
-  }
 
-  document.getElementById('btnAniadirDuenoAnterior').addEventListener('click', function () {
-    añadirDuenoAnterior('id_nombreDuenoAnterior');
-  });
+    document.getElementById('btnAniadirDuenoAnterior').addEventListener('click', function () {
+      añadirDuenoAnterior('id_nombreDuenoAnterior');
+    });
 
-  document.getElementById('btnAniadirColor').addEventListener('click', function () {
-    añadirColor('id_color');
-  });
+    document.getElementById('btnAniadirColor').addEventListener('click', function () {
+      añadirColor('id_color');
+    });
 
-  document.getElementById('btnAniadirEstado').addEventListener('click', function () {
-    añadirEstado('id_estadoDeSalud');
-  });
+    document.getElementById('btnAniadirEstado').addEventListener('click', function () {
+      añadirEstado('id_estadoDeSalud');
+    });
 
   });
 

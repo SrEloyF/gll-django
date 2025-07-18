@@ -49,4 +49,7 @@ urlpatterns = [
     path('duenoanterior/nuevo/ajax/', views.duenoanterior_create_ajax, name='duenoanterior_create_ajax'),
 
     path('export-db/', views.export_db, name='export_db'),
+
+    path('placa/nuevo/ajax/', views.placa_create_ajax, name='placa_create_ajax'),
+    path('peso/nuevo/ajax/', views.peso_create_ajax, name='peso_create_ajax'),
 ]

@@ -18,7 +18,13 @@
           {% for g in page_obj %}
             <tr>
               <td class="ps-2 ps-md-3">
-                <span class="fw-bold">{{ g.nroPlaca }}</span>
+                <span class="fw-bold">
+                  {% if g.nroPlaca %}
+                  {{ g.nroPlaca }}
+                  {% else %}
+                  —
+                  {% endif %}
+                </span>
               </td>
               <td class="d-none d-sm-table-cell">{{ g.color }}</td>
               <td>
@@ -67,7 +73,7 @@
                   {% if sexo_actual == 'machos' %}
                     No hay gallos macho registrados.
                   {% elif sexo_actual == 'hembras' %}
-                    No hay gallos hembra registrados.
+                    No hay gallinas registradas.
                   {% else %}
                     No hay gallos registrados.
                   {% endif %}

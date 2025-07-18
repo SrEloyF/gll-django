@@ -14,7 +14,37 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
+@csrf_exempt
+def peso_create_ajax(request):
+    if request.method == 'POST':
+        peso = request.POST.get('peso', '').strip()
+        try:
+            peso_val = float(peso)
+        except ValueError:
+            return JsonResponse({'error': 'Peso inválido.'}, status=400)
+        if not peso or peso_val <= 0:
+            return JsonResponse({'error': 'El peso es requerido y debe ser positivo.'}, status=400)
+        if PesosCheck.objects.filter(peso=peso_val).exists():
+            return JsonResponse({'error': 'Ya existe ese peso.'}, status=400)
+        nuevo_peso = PesosCheck.objects.create(peso=peso_val)
+        return JsonResponse({'success': True, 'id': nuevo_peso.id, 'peso': str(nuevo_peso.peso)})
+    return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
+
+@csrf_exempt
+def placa_create_ajax(request):
+    if request.method == 'POST':
+        nroPlaca = request.POST.get('nroPlaca', '').strip()
+        if not nroPlaca:
+            return JsonResponse({'error': 'El número de placa es requerido.'}, status=400)
+        if PlacaCheck.objects.filter(nroPlaca=nroPlaca).exists():
+            return JsonResponse({'error': 'Ya existe una placa con ese número.'}, status=400)
+        placa = PlacaCheck.objects.create(nroPlaca=nroPlaca)
+        return JsonResponse({'success': True, 'id': placa.nroPlaca, 'nroPlaca': placa.nroPlaca})
+    return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
 paginas = 2
+
 def export_db(request):
     db_settings = settings.DATABASES['default']
     connection = pymysql.connect(
