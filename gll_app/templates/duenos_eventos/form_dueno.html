@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Formulario de Dueño{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom">
+        <h1 class="h4 mb-0">
+            <i class="bi-person-badge me-2"></i>
+            {% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Dueño
+        </h1>
+    </div>
+    
+    <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="row g-3">
+                <div class="col-md-6 col-lg-4">
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">
+                            Nombre del Dueño
+                        </label>
+                        {{ form.nombre }}
+                        <div class="invalid-feedback">
+                            Por favor ingresa un nombre válido.
+                        </div>
+                        {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.nombre.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi-check-circle me-1"></i>
+                    {% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}
+                </button>
+                
+                <a href="{% url 'dueno_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi-people me-1"></i>Cancelar (ver dueños)
+                </a>
+                
+                <a href="{% url 'crear_encuentro' %}" class="btn btn-outline-secondary">
+                    <i class="bi-trophy me-1"></i>Cancelar (registrar encuentro)
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

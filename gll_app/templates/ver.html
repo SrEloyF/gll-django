@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles del Gallo{% endblock %}
+
+{% block content %}
+<div class="container py-2 py-md-4">
+  <div class="card shadow border-0">
+    <!-- Cabecera responsiva -->
+    <div class="card-header bg-primary bg-gradient text-white d-flex flex-column flex-md-row justify-content-between align-items-center p-3">
+      <h2 class="mb-2 mb-md-0 fs-4 fs-md-3 d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-2"></i>Datos del Gallo
+      </h2>
+      <span class="badge bg-light text-primary fs-5">{{ gallo.nroPlaca }}</span>
+    </div>
+    
+    <div class="card-body p-3">
+      <div class="row g-4">
+        <!-- Columna de imagen - Responsiva -->
+        <div class="col-lg-4 text-center">
+          <div class="position-relative mb-3">
+            {% if gallo.nombre_img %}
+              <img src="{{ gallo.nombre_img.url }}" class="img-fluid rounded shadow-sm" alt="Imagen del gallo {{ gallo.nroPlaca }}">
+              <div class="position-absolute bottom-0 end-0">
+                <span class="badge rounded-pill bg-dark p-2">
+                  <i class="bi bi-camera-fill me-1"></i>Foto
+                </span>
+              </div>
+            {% else %}
+              <div class="border rounded p-4 p-md-5 bg-light d-flex justify-content-center align-items-center">
+                <div class="text-muted">
+                  <i class="bi bi-image fs-1 d-block mb-2"></i>
+                  <span>Sin imagen</span>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          
+          <div class="d-grid gap-2 mt-3">
+            <a href="{% url 'index' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Volver al listado de gallos
+            </a>
+          </div>
+        </div>
+        
+        <!-- Columna de información - Optimizada para móviles -->
+        <div class="col-lg-8">
+          <!-- Información principal - Convertida a tarjetas en móviles -->
+          <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light py-2">
+              <h5 class="card-title mb-0 fs-5">
+                <i class="bi bi-list-ul me-2"></i>Información principal
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <!-- Tabla visible en pantallas grandes -->
+              <div class="d-none d-md-block">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <tbody>
+                      <tr>
+                        <th class="ps-3" style="width: 35%;">
+                          <i class="bi bi-palette me-2"></i>Color
+                        </th>
+                        <td>{{ gallo.color.nombre }}</td>
+                      </tr>
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-gender-ambiguous me-2"></i>Sexo
+                        </th>
+                        <td>
+                          <span class="badge {% if gallo.sexo == 'M' %}bg-primary{% else %}bg-danger{% endif %}">
+                            {{ gallo.get_sexo_display }}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-tags me-2"></i>Tipo
+                        </th>
+                        <td>{{ gallo.get_tipoGallo_display }}</td>
+                      </tr>
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-calendar-date me-2"></i>Fecha de Nacimiento
+                        </th>
+                        <td>
+                          {% if gallo.fechaNac %}
+                            {{ gallo.fechaNac|date:"d/m/Y" }}
+                          {% else %}
+                            Fecha Nac. no establecida
+                          {% endif %}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-speedometer2 me-2"></i>Peso (libras)
+                        </th>
+                        <td>{{ gallo.peso }}</td>
+                      </tr>
+
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-bandaid me-2"></i>Estado de salud
+                        </th>
+                        <td>{{ gallo.estadoDeSalud }}</td>
+                      </tr>
+
+                      {% if gallo.nroPlacaAnterior %}
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-shield-lock me-2"></i>Placa anterior
+                        </th>
+                        <td>{{ gallo.nroPlacaAnterior }}</td>
+                      </tr>
+                      {% endif %}
+
+                      {% if gallo.nombreDuenoAnterior %}
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-person-x me-2"></i>Dueño anterior
+                        </th>
+                        <td>{{ gallo.nombreDuenoAnterior }}</td>
+                      </tr>
+                      {% endif %}
+
+                      {% if gallo.fechaMuerte %}
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-calendar-x me-2"></i>Fecha de muerte
+                        </th>
+                        <td>{{ gallo.fechaMuerte }}</td>
+                      </tr>
+                      {% else %}
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-calendar-x me-2"></i>Edad
+                        </th>
+                        <td>{{ edadGallo }}</td>
+                      </tr>
+                      {% endif %}
+
+                      <tr>
+                        <th class="ps-3">
+                          <i class="bi bi-chat-left-text me-2"></i>Observaciones
+                        </th>
+                        <td>
+                          {% if gallo.observaciones %}
+                            {{ gallo.observaciones }}
+                          {% else %}
+                            <span class="text-muted fst-italic">Sin observaciones</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Versión para móviles - Lista apilada -->
+              <div class="d-md-none">
+                <div class="list-group list-group-flush">
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-palette me-2"></i>Color</div>
+                    <div>{{ gallo.color.nombre }}</div>
+                  </div>
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-gender-ambiguous me-2"></i>Sexo</div>
+                    <div>
+                      <span class="badge {% if gallo.sexo == 'M' %}bg-primary{% else %}bg-danger{% endif %}">
+                        {{ gallo.get_sexo_display }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-tags me-2"></i>Tipo</div>
+                    <div>{{ gallo.get_tipoGallo_display }}</div>
+                  </div>
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-calendar-date me-2"></i>Fecha de Nacimiento</div>
+                    <div>
+                      {% if gallo.fechaNac %}
+                      {{ gallo.fechaNac|date:"d/m/Y" }}
+                      {% else %}
+                      Fecha Nac. no establecida
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-speedometer2 me-2"></i>Peso (libras)</div>
+                    <div>{{ gallo.peso }}</div>
+                  </div>
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-bandaid me-2"></i>Estado de salud</div>
+                    <div>{{ gallo.estadoDeSalud }}</div>
+                  </div>
+                  {% if gallo.nroPlacaAnterior %}
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-shield-lock me-2"></i>Placa anterior</div>
+                    <div>{{ gallo.nroPlacaAnterior }}</div>
+                  </div>
+                  {% endif %}
+                  {% if gallo.nombreDuenoAnterior %}
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-person-x me-2"></i>Dueño anterior</div>
+                    <div>{{ gallo.nombreDuenoAnterior }}</div>
+                  </div>
+                  {% endif %}
+                  {% if gallo.fechaMuerte %}
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-calendar-x me-2"></i>Fecha de muerte</div>
+                    <div>{{ gallo.fechaMuerte }}</div>
+                  </div>
+                  {% else %}
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-calendar-x me-2"></i>Edad</div>
+                    <div>{{ edadGallo }}</div>
+                  </div>
+                  {% endif %}
+                  <div class="list-group-item">
+                    <div class="fw-bold"><i class="bi bi-chat-left-text me-2"></i>Observaciones</div>
+                    <div>
+                      {% if gallo.observaciones %}
+                        {{ gallo.observaciones }}
+                      {% else %}
+                        <span class="text-muted fst-italic">Sin observaciones</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Genealogía - Responsive -->
+          <div class="card border-0 shadow-sm mt-3 mt-md-0">
+            <div class="card-header bg-light py-2">
+              <h5 class="card-title mb-0 fs-5">
+                <i class="bi bi-diagram-3 me-2"></i>Genealogía
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <!-- Padre -->
+                <div class="col-md-6">
+                  <div class="card h-100 {% if gallo.placaPadre %}border-primary{% else %}border-light{% endif %}">
+                    <div class="card-header {% if gallo.placaPadre %}bg-primary text-white{% else %}bg-light{% endif %} py-2">
+                      <h6 class="mb-0">
+                        <i class="bi bi-gender-male me-1"></i>Padre
+                      </h6>
+                    </div>
+                    <div class="card-body">
+                      {% if gallo.placaPadre %}
+                        <p class="card-text mb-2">
+                          <strong>Placa:</strong> {{ gallo.placaPadre.nroPlaca }}
+                        </p>
+                        <p class="card-text mb-2">
+                          <strong>Color:</strong> {{ gallo.placaPadre.color }}
+                        </p>
+                        <div class="d-grid mt-3">
+                          <a href="{% url 'ver' gallo.placaPadre.idGallo %}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye me-1"></i>Ver detalles
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="text-center text-muted py-3">
+                          <i class="bi bi-x-circle fs-3 d-block mb-2"></i>
+                          No tiene padre registrado
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Madre -->
+                <div class="col-md-6 mt-3">
+                  <div class="card h-100 {% if gallo.placaMadre %}border-danger{% else %}border-light{% endif %}">
+                    <div class="card-header {% if gallo.placaMadre %}bg-danger text-white{% else %}bg-light{% endif %} py-2">
+                      <h6 class="mb-0">
+                        <i class="bi bi-gender-female me-1"></i>Madre
+                      </h6>
+                    </div>
+                    <div class="card-body">
+                      {% if gallo.placaMadre %}
+                        <p class="card-text mb-2">
+                          <strong>Placa:</strong> {{ gallo.placaMadre.nroPlaca }}
+                        </p>
+                        <p class="card-text mb-2">
+                          <strong>Color:</strong> {{ gallo.placaMadre.color }}
+                        </p>
+                        <div class="d-grid mt-3">
+                          <a href="{% url 'ver' gallo.placaMadre.idGallo %}" class="btn btn-sm btn-danger">
+                            <i class="bi bi-eye me-1"></i>Ver detalles
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="text-center text-muted py-3">
+                          <i class="bi bi-x-circle fs-3 d-block mb-2"></i>
+                          No tiene madre registrada
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Botones de acción - Adaptados para móviles -->
+          <div class="d-flex flex-column flex-md-row gap-2 justify-content-end mt-4">
+            <a href="{% url 'editar' gallo.idGallo %}" class="btn btn-warning">
+              <i class="bi bi-pencil-square me-1"></i>Editar
+            </a>
+            <button type="button" class="btn btn-danger mt-2 mt-md-0" id="eliminarButton">
+              <i class="bi bi-trash me-1"></i>Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('eliminarButton').addEventListener('click', function() {
+    Swal.fire({
+      title: '¿Está seguro?',
+      html: `¿Desea eliminar el gallo con placa <strong>{{ gallo.nroPlaca }}</strong>?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Confirmar eliminación',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        title: 'text-danger',
+        icon: 'text-warning'
+      },
+      preConfirm: () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "eliminar" gallo.idGallo %}';
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        
+        form.appendChild(csrfToken);
+        
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+</script>
+{% endblock %}

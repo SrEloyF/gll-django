@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Listado de Gallos{% endblock %}
+
+{% block content %}
+
+<div class="container py-md-4">
+  <!-- Cabecera responsiva -->
+  <div class="card shadow-sm mb-3 mb-md-4 border-0">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
+          <h1 class="fs-4 fs-md-3 mb-0">
+            <i class="bi bi-list-ul me-2"></i>Listado de Gallos
+          </h1>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2">
+            <div class="input-group">
+              <input type="text" class="form-control" id="searchInput" placeholder="Buscar por placa"
+                aria-label="Buscar">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{% url 'crear' %}" class="btn btn-primary flex-grow-1">
+                <i class="bi bi-plus-circle me-1 d-none d-md-inline"></i>Nuevo
+              </a>
+              <a href="{% url 'listar_encuentros' %}" class="btn btn-success flex-grow-1">
+                <i class="bi bi-trophy me-1 d-none d-md-inline"></i>Encuentros
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros y estadísticas responsivas -->
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-body pb-0">
+
+      <!-- Pestañas responsivas -->
+      <ul class="nav nav-tabs" id="galloTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="todos-tab" data-bs-toggle="tab" data-bs-target="#todos" type="button" role="tab"
+            aria-controls="todos" aria-selected="true">
+            Todos
+            <span class="badge bg-secondary ms-1">{{ total_gallos }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="machos-tab" data-bs-toggle="tab" data-bs-target="#machos" type="button" role="tab"
+            aria-controls="machos" aria-selected="false">
+            Machos
+            <span class="badge bg-primary ms-1">{{ cantidad_machos }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="hembras-tab" data-bs-toggle="tab" data-bs-target="#hembras" type="button" role="tab"
+            aria-controls="hembras" aria-selected="false">
+            Hembras
+            <span class="badge bg-danger ms-1">{{ cantidad_hembras }}</span>
+          </button>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+
+  <!-- Contenido de pestañas -->
+  <div class="tab-content mt-3" id="galloTabsContent">
+    {# ——— PESTAÑA “TODOS” ——— #}
+    <div class="tab-pane fade show active" id="todos" role="tabpanel" aria-labelledby="todos-tab">
+      {# Insertamos directamente, server-side, el primer bloque de gallos (sexo = 'todos', page 1) #}
+      {% include 'partials/gallo_list.html' with page_obj=page_obj sexo_actual='todos' %}
+    </div>
+
+    {# ——— PESTAÑA “MACHOS” ——— #}
+    <div class="tab-pane fade" id="machos" role="tabpanel" aria-labelledby="machos-tab">
+      {# Aquí ponemos un contenedor vacío. Se llenará por AJAX cuando el usuario haga clic en “Machos” #}
+      <div class="loading-machos text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando machos…</p>
+      </div>
+
+      {# Contenedor donde montaremos la tabla + paginación de “machos” #}
+      <div class="content-machos"></div>
+    </div>
+
+    {# ——— PESTAÑA “HEMBRAS” ——— #}
+    <div class="tab-pane fade" id="hembras" role="tabpanel" aria-labelledby="hembras-tab">
+      <div class="loading-hembras text-center py-4">
+        <div class="spinner-border text-danger" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Cargando hembras…</p>
+      </div>
+
+      <div class="content-hembras"></div>
+    </div>
+  </div>
+
+</div>
+
+{% if error_eliminacion %}
+    <script>
+    Swal.fire({
+      icon: 'error',
+      title: 'No se puede eliminar',
+      text: 'Este gallo está relacionado en un encuentro.',
+      confirmButtonText: 'Entendido'
+    });
+  </script>
+{% endif %}
+
+<script>
+  function confirmarEliminacion(idGallo) {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "No se podrá recuperar el registro",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/eliminar/${idGallo}`;
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('keyup', function () {
+      const searchText = this.value.toLowerCase();
+      const activePane = document.querySelector('.tab-pane.show.active');
+      if (!activePane) return;
+      const table = activePane.querySelector('table');
+      if (!table) return;
+      const rows = table.getElementsByTagName('tr');
+      for (let i = 1; i < rows.length; i++) {
+        let found = false;
+        const cells = rows[i].getElementsByTagName('td');
+
+        if (cells.length === 0) continue;
+
+        for (let j = 0; j < cells.length - 1; j++) {
+          const cellText = cells[j].textContent.toLowerCase();
+          if (cellText.indexOf(searchText) > -1) {
+            found = true;
+            break;
+          }
+        }
+
+        rows[i].style.display = found ? '' : 'none';
+      }
+    });
+
+
+
+    const tabMachos = document.getElementById('machos-tab');
+      const tabHembras = document.getElementById('hembras-tab');
+      const paneMachos = document.querySelector('#machos .content-machos');
+      const paneHembras = document.querySelector('#hembras .content-hembras');
+
+      // Función auxiliar que hace la petición AJAX y reemplaza el innerHTML del contenedor
+      function cargarTabla(sexo, page, contenedor, loadingElement) {
+        // Mostramos el loading
+        loadingElement.style.display = 'block';
+        contenedor.innerHTML = ''; // vaciamos contenido anterior
+
+        fetch(`{% url 'gallo_list_ajax' %}?sexo=${sexo}&page=${page}`)
+          .then(resp => {
+            if (!resp.ok) {
+              throw new Error('Error en la petición AJAX');
+            }
+            return resp.text();
+          })
+          .then(htmlFragment => {
+            // Ocultamos el loading y pintamos la tabla+paginación
+            loadingElement.style.display = 'none';
+            contenedor.innerHTML = htmlFragment;
+            // Después de insertar el HTML, debemos “enganchar” los enlaces de paginación
+            engancharPaginacion(sexo, contenedor, loadingElement);
+          })
+          .catch(err => {
+            console.error(err);
+            loadingElement.innerHTML = '<p class="text-danger">Fallo al cargar datos.</p>';
+          });
+      }
+
+      // 2) Cuando el usuario hace clic en la pestaña “Machos”
+      tabMachos.addEventListener('shown.bs.tab', function () {
+        // Si todavía no se ha cargado contenido (contiene solo el spinner y ningún <table>), lo pedimos
+        if (!paneMachos.innerHTML.trim()) {
+          cargarTabla('machos', 1, paneMachos, document.querySelector('.loading-machos'));
+        }
+      });
+
+      // 3) Cuando el usuario hace clic en la pestaña “Hembras”
+      tabHembras.addEventListener('shown.bs.tab', function () {
+        if (!paneHembras.innerHTML.trim()) {
+          cargarTabla('hembras', 1, paneHembras, document.querySelector('.loading-hembras'));
+        }
+      });
+
+      // 4) Función para “enganchar” los enlaces de paginación que lleguen en el fragmento AJAX
+      function engancharPaginacion(sexo, contenedor, loadingElement) {
+        // Todos los enlaces .page-link dentro del contenedor que tienen data-sexo y data-page
+        const enlaces = contenedor.querySelectorAll('.page-link[data-sexo][data-page]');
+        enlaces.forEach(enlace => {
+          enlace.addEventListener('click', function (evento) {
+            evento.preventDefault();
+            const nuevaPagina = this.getAttribute('data-page');
+            cargarTabla(sexo, nuevaPagina, contenedor, loadingElement);
+          });
+        });
+      }
+
+      // 5) (Opcional) Podrías enganchar también que, si el usuario en la pestaña “Todos” hace clic
+      //    en la paginación, recargue la parte “Todos” sin recargar toda la página.
+      //    Para ello, en el fragmento parcial “todos” usarías la misma lógica.
+      //    Ejemplo: en la pestaña “Todos” la tabla ya está pintada server-side, así que:
+      const paneTodos = document.querySelector('#todos');
+      engancharPaginacion('todos', paneTodos, { style: { display: 'none' } });
+      // El loadingElement no se usa para 'todos' porque ya vino renderizado.
+
+
+
+  });
+</script>
+{% endblock %}

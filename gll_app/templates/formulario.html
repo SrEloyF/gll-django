@@ -1,0 +1,656 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Gallo{% endblock %}
+
+{% block content %}
+<div class="container py-2 py-md-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary bg-gradient text-white">
+      <h2 class="mb-0 fs-4 fs-md-3">{% if form.instance.pk %}Editar{% else %}Registrar{% endif %} Gallo</h2>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="row g-3">
+          <!-- Datos básicos -->
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              <select class="form-select">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+              </select>
+              <label for="{{ form.nroPlaca.id_for_label }}">Número de Placa <span class="text-danger">*</span></label>
+
+              {# Error container siempre presente, inicialmente oculto #}
+              <div id="placa-error" class="invalid-feedback" style="display: none;"></div>
+
+              {% if form.nroPlaca.errors %}
+                {# Si ya venían errores del servidor, los volcamos dentro #}
+                <script>
+                  document.addEventListener('DOMContentLoaded', () => {
+                    const errDiv = document.getElementById('placa-error');
+                    errDiv.textContent = '{{ form.nroPlaca.errors.as_text|escapejs }}';
+                    errDiv.style.display = 'block';
+                    document.getElementById('id_nroPlaca').classList.add('is-invalid');
+                  });
+                </script>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.fechaNac }}
+              <label for="{{ form.fechaNac.id_for_label }}">Fecha de Nacimiento</label>
+              {% if form.fechaNac.errors %}
+              <div class="invalid-feedback d-block">{{ form.fechaNac.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="form-floating mb-3">
+              {{ form.color }}
+              <label for="{{ form.color.id_for_label }}">Color <span class="text-danger">*</span></label>
+              {% if form.color.errors %}
+                <div class="invalid-feedback d-block">{{ form.color.errors }}</div>
+              {% endif %}
+              
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-palette text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirColor" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="form-floating mb-3">
+              {{ form.sexo }}
+              <label for="{{ form.sexo.id_for_label }}">Sexo <span class="text-danger">*</span></label>
+              {% if form.sexo.errors %}
+              <div class="invalid-feedback d-block">{{ form.sexo.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="form-floating mb-3">
+              {{ form.tipoGallo }}
+              <label for="{{ form.tipoGallo.id_for_label }}">Tipo de Gallo <span class="text-danger">*</span></label>
+              {% if form.tipoGallo.errors %}
+              <div class="invalid-feedback d-block">{{ form.tipoGallo.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.peso }}
+              <label for="{{ form.peso.id_for_label }}">Peso (libras) <span class="text-danger">*</span></label>
+              {% if form.peso.errors %}
+              <div class="invalid-feedback d-block">{{ form.peso.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.nroPlacaAnterior }}
+              <label for="{{ form.nroPlacaAnterior.id_for_label }}">Número de Placa Anterior</label>
+              {% if form.nroPlacaAnterior.errors %}
+              <div class="invalid-feedback d-block">{{ form.nroPlacaAnterior.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.nombreDuenoAnterior }}
+              <label for="{{ form.nombreDuenoAnterior.id_for_label }}">Nombre del Dueño Anterior</label>
+              {% if form.nombreDuenoAnterior.errors %}
+                <div class="invalid-feedback d-block">{{ form.nombreDuenoAnterior.errors }}</div>
+              {% endif %}
+
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-person-fill text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirDuenoAnterior" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating position-relative mb-3">
+              {{ form.estadoDeSalud }}
+              <label for="{{ form.estadoDeSalud.id_for_label }}">Estado de Salud <span class="text-danger">*</span></label>
+
+              {% if form.estadoDeSalud.errors %}
+                <div class="invalid-feedback d-block">{{ form.estadoDeSalud.errors }}</div>
+              {% endif %}
+
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-bandaid text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirEstado" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.fechaMuerte }}
+              <label for="{{ form.fechaMuerte.id_for_label }}">Fecha de Muerte</label>
+              {% if form.fechaMuerte.errors %}
+              <div class="invalid-feedback d-block">{{ form.fechaMuerte.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="col-12 mb-3">
+            <label for="{{ form.nombre_img.id_for_label }}" class="form-label">Imagen <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-camera-fill"></i></span>
+              {{ form.nombre_img }}
+            </div>
+            {% if form.nombre_img.errors %}
+            <div class="invalid-feedback d-block">{{ form.nombre_img.errors }}</div>
+            {% endif %}
+            <div class="form-text">Seleccione una imagen del ave para su registro.</div>
+          </div>
+        </div>
+
+        <!-- Genealogía - Responsive -->
+        <div class="card mt-4 mb-4 border-primary-subtle">
+          <div class="card-header bg-primary-subtle">
+            <h5 class="card-title mb-0">Genealogía</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- Padre - Responsive -->
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Padre</label>
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center">
+                  <button type="button" class="btn btn-primary mb-2 mb-md-0" data-bs-toggle="modal"
+                    data-bs-target="#modalPadre">
+                    <i class="bi bi-search me-1"></i> Seleccionar Padre
+                  </button>
+                  <input type="hidden" id="inputPadre" name="placaPadre" value="{{ padre_sel|default_if_none:'' }}">
+                  <div class="d-flex align-items-center ms-md-2">
+                    <span id="padreSeleccionado" class="badge bg-success {% if not padre_sel %}d-none{% endif %}">
+                      {% if padre_sel %}Placa: {{ padre_sel }}{% endif %}
+                    </span>
+                    {% if padre_sel %}
+                    <button type="button" class="btn btn-danger btn-sm ms-2" id="quitarPadre">
+                      <i class="bi bi-x-circle me-1"></i> Quitar
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-danger btn-sm ms-2 d-none" id="quitarPadre">
+                      <i class="bi bi-x-circle me-1"></i> Quitar
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Madre - Responsive -->
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold">Madre</label>
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center">
+                  <button type="button" class="btn btn-primary mb-2 mb-md-0" data-bs-toggle="modal"
+                    data-bs-target="#modalMadre">
+                    <i class="bi bi-search me-1"></i> Seleccionar Madre
+                  </button>
+                  <input type="hidden" id="inputMadre" name="placaMadre" value="{{ madre_sel|default_if_none:'' }}">
+                  <div class="d-flex align-items-center ms-md-2">
+                    <span id="madreSeleccionada" class="badge bg-success {% if not madre_sel %}d-none{% endif %}">
+                      {% if madre_sel %}Placa: {{ madre_sel }}{% endif %}
+                    </span>
+                    {% if madre_sel %}
+                    <button type="button" class="btn btn-danger btn-sm ms-2" id="quitarMadre">
+                      <i class="bi bi-x-circle me-1"></i> Quitar
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-danger btn-sm ms-2 d-none" id="quitarMadre">
+                      <i class="bi bi-x-circle me-1"></i> Quitar
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de acción - Responsive -->
+        <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-center gap-3 mt-4">
+          <div class="d-flex flex-column flex-md-row gap-2 order-0 order-md-1 w-100 w-md-auto">
+            <a href="{% url 'index' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+            <button type="submit" class="btn btn-success" id="submit-btn">
+              <i class="bi bi-save me-1"></i>Guardar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Padre -->
+<div class="modal fade" id="modalPadre" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-gender-male me-2"></i>Seleccionar Padre</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped">
+            <thead class="table-light">
+              <tr>
+                <th>Placa</th>
+                <th>Color</th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for g in gallos %}
+              {% if g.sexo == 'M' %}
+              <tr>
+                <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
+                <td>{{ g.color }}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-success seleccionar-padre" data-placa="{{ g.nroPlaca }}"
+                    data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i> Seleccionar
+                  </button>
+                </td>
+              </tr>
+              {% endif %}
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center py-3 text-muted">
+                  <i class="bi bi-exclamation-circle me-2"></i>No hay gallos macho disponibles.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Madre -->
+<div class="modal fade" id="modalMadre" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-gender-female me-2"></i>Seleccionar Madre</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped">
+            <thead class="table-light">
+              <tr>
+                <th>Placa</th>
+                <th>Color</th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for g in gallos %}
+              {% if g.sexo == 'H' %}
+              <tr>
+                <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
+                <td>{{ g.color }}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-danger seleccionar-madre" data-placa="{{ g.nroPlaca }}"
+                    data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i> Seleccionar
+                  </button>
+                </td>
+              </tr>
+              {% endif %}
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center py-3 text-muted">
+                  <i class="bi bi-exclamation-circle me-2"></i>No hay gallinas disponibles.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function addUpperCaseListenerToSwalInputs() {
+    const observer = new MutationObserver((mutationsList) => {
+      mutationsList.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          const swalInputs = document.querySelectorAll('.swal2-input');
+          swalInputs.forEach(input => {
+            if (!input.hasAttribute('data-upper-case-listener')) {
+              input.addEventListener('input', () => {
+                input.value = input.value.toUpperCase();
+              });
+              input.setAttribute('data-upper-case-listener', 'true');
+            }
+          });
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  document.getElementById('{{ form.nombre_img.id_for_label }}').classList.add('form-control');
+
+  // Inicialización de validación de Bootstrap
+  (() => {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+
+  document.addEventListener('DOMContentLoaded', function () {
+    addUpperCaseListenerToSwalInputs();
+
+  const inputPlaca = document.getElementById('id_nroPlaca');
+  const errDiv     = document.getElementById('placa-error');
+  const submitBtn  = document.getElementById('submit-btn');
+
+  inputPlaca.addEventListener('blur', function() {
+    const placa = this.value.trim();
+    if (!placa) {
+      this.classList.remove('is-invalid');
+      errDiv.textContent = '';
+      errDiv.style.display = 'none';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    fetch('{% url "ajax_valida_placa" %}?placa=' + encodeURIComponent(placa))
+      .then(res => res.json())
+      .then(data => {
+        if (data.exists) {
+          this.classList.add('is-invalid');
+          errDiv.textContent = 'La placa ya está registrada.';
+          errDiv.style.display = 'block';
+          submitBtn.disabled = true;
+        } else {
+          this.classList.remove('is-invalid');
+          errDiv.textContent = '';
+          errDiv.style.display = 'none';
+          submitBtn.disabled = false;
+        }
+      })
+      .catch(err => {
+        console.error('Error en la validación AJAX:', err);
+        submitBtn.disabled = true;
+      });});
+
+
+  function añadirEstado(selectId) {
+    Swal.fire({
+      title: 'Ingresa nuevo estado:',
+      input: 'text',
+      inputPlaceholder: 'Introduce el nombre aquí',
+      showCancelButton: true,
+      confirmButtonText: 'Registrar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (inputValue) => {
+        if (!inputValue) {
+          Swal.showValidationMessage('¡Por favor, ingresa algo!');
+        }
+        return inputValue;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const nombre = result.value;
+
+        fetch("{% url 'estado_create_ajax' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          body: new URLSearchParams({
+            'nombre': nombre,
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const selectEstado = document.getElementById(selectId);
+            const nuevaOpcionEstado = document.createElement('option');
+            nuevaOpcionEstado.value = data.id;
+            nuevaOpcionEstado.textContent = data.nombre;
+            selectEstado.appendChild(nuevaOpcionEstado);
+            nuevaOpcionEstado.selected = true;
+            Swal.fire('¡Éxito!', 'Estado registrado correctamente.', 'success');
+          } else {
+            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          Swal.fire('Error', 'Error en la petición.', 'error');
+        });
+      }
+    });
+  }
+
+  function añadirColor(selectId) {
+    Swal.fire({
+      title: 'Ingresa nuevo color:',
+      input: 'text',
+      inputPlaceholder: 'Introduce el nombre aquí',
+      showCancelButton: true,
+      confirmButtonText: 'Registrar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (inputValue) => {
+        if (!inputValue) {
+          Swal.showValidationMessage('¡Por favor, ingresa algo!');
+        }
+        return inputValue;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const nombre = result.value;
+
+        fetch("{% url 'color_create_ajax' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          body: new URLSearchParams({
+            'nombre': nombre,
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const selectColor = document.getElementById(selectId);
+            const nuevaOpcionColor = document.createElement('option');
+            nuevaOpcionColor.value = data.id;
+            nuevaOpcionColor.textContent = data.nombre;
+            selectColor.appendChild(nuevaOpcionColor);
+            nuevaOpcionColor.selected = true;
+
+            Swal.fire('¡Éxito!', 'Color registrado correctamente.', 'success');
+          } else {
+            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          Swal.fire('Error', 'Error en la petición.', 'error');
+        });
+      }
+    });
+  }
+
+  function añadirDuenoAnterior(selectId) {
+    Swal.fire({
+      title: 'Ingresa nombre del dueño anterior:',
+      input: 'text',
+      inputPlaceholder: 'Introduce el nombre aquí',
+      showCancelButton: true,
+      confirmButtonText: 'Registrar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (inputValue) => {
+        if (!inputValue) {
+          Swal.showValidationMessage('¡Por favor, ingresa algo!');
+        }
+        return inputValue;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const nombre = result.value;
+
+        fetch("{% url 'duenoanterior_create_ajax' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          body: new URLSearchParams({
+            'nombre': nombre,
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const selectDuenoAnterior = document.getElementById(selectId);
+
+            const nuevaOpcionDuenoAnterior = document.createElement('option');
+            nuevaOpcionDuenoAnterior.value = data.id;
+            nuevaOpcionDuenoAnterior.textContent = data.nombre;
+
+            selectDuenoAnterior.appendChild(nuevaOpcionDuenoAnterior);
+            nuevaOpcionDuenoAnterior.selected = true;
+
+            Swal.fire('¡Éxito!', 'Dueño anterior registrado correctamente.', 'success');
+          } else {
+            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          Swal.fire('Error', 'Error en la petición.', 'error');
+        });
+      }
+    });
+  }
+
+  document.getElementById('btnAniadirDuenoAnterior').addEventListener('click', function () {
+    añadirDuenoAnterior('id_nombreDuenoAnterior');
+  });
+
+  document.getElementById('btnAniadirColor').addEventListener('click', function () {
+    añadirColor('id_color');
+  });
+
+  document.getElementById('btnAniadirEstado').addEventListener('click', function () {
+    añadirEstado('id_estadoDeSalud');
+  });
+
+  });
+
+  // Quitar Padre
+  document.getElementById('quitarPadre')?.addEventListener('click', () => {
+    document.getElementById('inputPadre').value = '';
+    const badge = document.getElementById('padreSeleccionado');
+    const botonEliminarPadre = document.getElementById('quitarPadre');
+    botonEliminarPadre.classList.add('d-none');
+    badge.classList.add('d-none');
+  });
+
+  // Quitar Madre
+  document.getElementById('quitarMadre')?.addEventListener('click', () => {
+    document.getElementById('inputMadre').value = '';
+    const badge = document.getElementById('madreSeleccionada');
+    const botonEliminarMadre = document.getElementById('quitarMadre');
+    botonEliminarMadre.classList.add('d-none');
+    badge.classList.add('d-none');
+  });
+
+  // Selección de padre
+  document.querySelectorAll('.seleccionar-padre').forEach(btn => {
+    btn.onclick = () => {
+      const placa = btn.dataset.placa;
+      const idGallo = btn.dataset.idgallo;
+      document.getElementById('inputPadre').value = idGallo;
+      const badge = document.getElementById('padreSeleccionado');
+      badge.textContent = `Placa: ${placa}`;
+      badge.classList.remove('d-none');
+      const botonEliminarPadre = document.getElementById('quitarPadre');
+      botonEliminarPadre.classList.remove('d-none');
+    };
+  });
+
+  // Selección de madre
+  document.querySelectorAll('.seleccionar-madre').forEach(btn => {
+    btn.onclick = () => {
+      const placa = btn.dataset.placa;
+      const idGallo = btn.dataset.idgallo;
+      document.getElementById('inputMadre').value = idGallo;
+      const badge = document.getElementById('madreSeleccionada');
+      badge.textContent = `Placa: ${placa}`;
+      badge.classList.remove('d-none');
+      const botonEliminarMadre = document.getElementById('quitarMadre');
+      botonEliminarMadre.classList.remove('d-none');
+    };
+  });
+
+</script>
+{% endblock %}

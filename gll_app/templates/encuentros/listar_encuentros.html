@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Listado de Encuentros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Encabezado y filtros -->
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h1 class="fs-3 mb-0">
+            <i class="bi bi-trophy me-2"></i>Listado de Encuentros
+          </h1>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex justify-content-md-end mt-3 mt-md-0">
+            <div class="input-group me-2" style="max-width: 250px;">
+              <input type="text" class="form-control" id="searchInput" placeholder="Buscar..." aria-label="Buscar">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>           
+            <a href="{% url 'crear_encuentro' %}" class="btn btn-primary">
+              <i class="bi bi-plus-circle me-1"></i>Nuevo Encuentro
+            </a>
+            <a href="{% url 'index' %}" class="btn btn-success ms-2">
+              <i class="bi bi-list-ul me-1"></i>Ver Gallos
+            </a> 
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-body pb-0">
+      <div class="row g-3">
+        <div class="col-sm-6 col-md-3">
+          <div class="card border-0 bg-primary bg-opacity-10 h-100">
+            <div class="card-body d-flex align-items-center">
+              <i class="bi bi-list-check fs-3 me-3 text-primary"></i>
+              <div>
+                <h6 class="card-title mb-0 text-primary">Total</h6>
+                <p class="card-text fs-4 fw-bold mb-0">{{ page_obj.paginator.count }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="card border-0 bg-success bg-opacity-10 h-100">
+            <div class="card-body d-flex align-items-center">
+              <i class="bi bi-trophy fs-3 me-3 text-success"></i>
+              <div>
+                <h6 class="card-title mb-0 text-success">Victorias</h6>
+                <p class="card-text fs-4 fw-bold mb-0" id="contador-victorias">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="card border-0 bg-warning bg-opacity-10 h-100">
+            <div class="card-body d-flex align-items-center">
+              <i class="bi bi-dash-circle fs-3 me-3 text-warning"></i>
+              <div>
+                <h6 class="card-title mb-0 text-warning">Tablas</h6>
+                <p class="card-text fs-4 fw-bold mb-0" id="contador-tablas">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="card border-0 bg-danger bg-opacity-10 h-100">
+            <div class="card-body d-flex align-items-center">
+              <i class="bi bi-x-circle fs-3 me-3 text-danger"></i>
+              <div>
+                <h6 class="card-title mb-0 text-danger">Derrotas</h6>
+                <p class="card-text fs-4 fw-bold mb-0" id="contador-derrotas">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="todos-tab" data-bs-toggle="tab" data-bs-target="#todos" type="button" role="tab" aria-controls="todos" aria-selected="true">
+            Todos
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="victorias-tab" data-bs-toggle="tab" data-bs-target="#victorias" type="button" role="tab" aria-controls="victorias" aria-selected="false">
+            Victorias
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tablas-tab" data-bs-toggle="tab" data-bs-target="#tablas" type="button" role="tab" aria-controls="tablas" aria-selected="false">
+            Tablas
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="derrotas-tab" data-bs-toggle="tab" data-bs-target="#derrotas" type="button" role="tab" aria-controls="derrotas" aria-selected="false">
+            Derrotas
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Contenido de pestañas -->
+  <div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="todos" role="tabpanel" aria-labelledby="todos-tab">
+      <div class="card shadow border-0">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="tablaEncuentros">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3" style="width: 8%">
+                    <div class="d-flex align-items-center">
+                      <span>ID</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th style="width: 15%">
+                    <div class="d-flex align-items-center">
+                      <span>Fecha</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th style="width: 17%">
+                    <div class="d-flex align-items-center">
+                      <span>Galpón 1</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th style="width: 17%">
+                    <div class="d-flex align-items-center">
+                      <span>Galpón 2</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th style="width: 15%">
+                    <div class="d-flex align-items-center">
+                      <span>Gallo</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th style="width: 10%">
+                    <div class="d-flex align-items-center">
+                      <span>Resultado</span>
+                      <a href="#" class="ms-1 text-muted">
+                        <i class="bi bi-arrow-down-up"></i>
+                      </a>
+                    </div>
+                  </th>
+                  <th class="text-end pe-3" style="width: 18%">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in page_obj %}
+                <tr class="fila-encuentro" data-resultado="{{ e.resultado }}">
+                  <td class="ps-3">
+                    <span class="fw-bold">{{ e.idEncuentro }}</span>
+                  </td>
+                  <td>{{ e.fechaYHora|date:"d/m/Y H:i" }}</td>
+                  <td>{{ e.galpon1 }}</td>
+                  <td>{{ e.galpon2 }}</td>
+                  <td>{{ e.gallo }}</td>
+                  <td>
+                    <span class="badge rounded-pill 
+                      {% if e.resultado == 'V' %}bg-success
+                      {% elif e.resultado == 'T' %}bg-warning text-dark
+                      {% elif e.resultado == 'D' %}bg-danger
+                      {% endif %}">
+                      {{ e.get_resultado_display }}
+                      <i class="bi 
+                        {% if e.resultado == 'V' %}bi-trophy-fill
+                        {% elif e.resultado == 'T' %}bi-dash-circle-fill
+                        {% elif e.resultado == 'D' %}bi-x-circle-fill
+                        {% endif %} ms-1"></i>
+                    </span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <div class="btn-group">
+                      <a href="{% url 'ver_encuentro' e.idEncuentro %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Ver
+                      </a>
+                      <a href="{% url 'editar_encuentro' e.idEncuentro %}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-pencil-square me-1"></i>Editar
+                      </a>
+                      <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmarEliminacion('{{ e.idEncuentro }}')">
+                        <i class="bi bi-trash3 me-1"></i>Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                      <i class="bi bi-info-circle me-2"></i>No hay encuentros registrados.
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paginación -->
+      {% if page_obj.has_other_pages %}
+      <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+          </li>
+          {% endif %}
+          
+          {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+    
+    <!-- Pestaña de victorias -->
+    <div class="tab-pane fade" id="victorias" role="tabpanel" aria-labelledby="victorias-tab">
+      <div class="card shadow border-0">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Fecha</th>
+                  <th>Galpón 1</th>
+                  <th>Galpón 2</th>
+                  <th>Gallo</th>
+                  <th class="text-end pe-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-victorias">
+                <!-- Se rellena via JavaScript -->
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                      <i class="bi bi-info-circle me-2"></i>Cargando datos...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pestaña de tablas -->
+    <div class="tab-pane fade" id="tablas" role="tabpanel" aria-labelledby="tablas-tab">
+      <div class="card shadow border-0">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Fecha</th>
+                  <th>Galpón 1</th>
+                  <th>Galpón 2</th>
+                  <th>Gallo</th>
+                  <th class="text-end pe-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-tablas">
+                <!-- Se rellena via JavaScript -->
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                      <i class="bi bi-info-circle me-2"></i>Cargando datos...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pestaña de derrotas -->
+    <div class="tab-pane fade" id="derrotas" role="tabpanel" aria-labelledby="derrotas-tab">
+      <div class="card shadow border-0">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">ID</th>
+                  <th>Fecha</th>
+                  <th>Galpón 1</th>
+                  <th>Galpón 2</th>
+                  <th>Gallo</th>
+                  <th class="text-end pe-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-derrotas">
+                <!-- Se rellena via JavaScript -->
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                      <i class="bi bi-info-circle me-2"></i>Cargando datos...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmarEliminacion(idEncuentro) {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "No se podrá recuperar el registro",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/encuentros/eliminar/${idEncuentro}`;
+      }
+    });
+  }
+
+  // Cuando el documento está listo
+  document.addEventListener('DOMContentLoaded', function() {
+    // Filtrado de tabla
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+      searchInput.addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const table = document.getElementById('tablaEncuentros');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) { // Empezar en 1 para saltar el encabezado
+          let found = false;
+          const cells = rows[i].getElementsByTagName('td');
+          
+          if (cells.length === 0) continue; // Saltar si no hay celdas (ej. mensaje vacío)
+          
+          // Buscar en todas las celdas de la fila
+          for (let j = 0; j < cells.length - 1; j++) { // -1 para saltar la columna de acciones
+            const cellText = cells[j].textContent.toLowerCase();
+            if (cellText.indexOf(searchText) > -1) {
+              found = true;
+              break;
+            }
+          }
+          
+          if (found) {
+            rows[i].style.display = '';
+          } else {
+            rows[i].style.display = 'none';
+          }
+        }
+      });
+    }
+    
+    // Contar y mostrar resultados
+    let contadorVictorias = 0;
+    let contadorTablas = 0;
+    let contadorDerrotas = 0;
+    const filas = document.querySelectorAll('.fila-encuentro');
+    
+    // Crear colecciones para las pestañas
+    let contenidoVictorias = '';
+    let contenidoTablas = '';
+    let contenidoDerrotas = '';
+    
+    filas.forEach(fila => {
+      const resultado = fila.getAttribute('data-resultado');
+      const id = fila.querySelector('td:first-child').textContent.trim();
+      const fecha = fila.querySelector('td:nth-child(2)').textContent.trim();
+      const galpon1 = fila.querySelector('td:nth-child(3)').textContent.trim();
+      const galpon2 = fila.querySelector('td:nth-child(4)').textContent.trim();
+      const gallo = fila.querySelector('td:nth-child(5)').textContent.trim();
+      const acciones = fila.querySelector('td:last-child').innerHTML;
+      
+      const rowHTML = `
+        <tr>
+          <td class="ps-3"><span class="fw-bold">${id}</span></td>
+          <td>${fecha}</td>
+          <td>${galpon1}</td>
+          <td>${galpon2}</td>
+          <td>${gallo}</td>
+          <td class="text-end pe-3">${acciones}</td>
+        </tr>
+      `;
+      
+      if (resultado === 'V') {
+        contadorVictorias++;
+        contenidoVictorias += rowHTML;
+      } else if (resultado === 'T') {
+        contadorTablas++;
+        contenidoTablas += rowHTML;
+      } else if (resultado === 'D') {
+        contadorDerrotas++;
+        contenidoDerrotas += rowHTML;
+      }
+    });
+    
+    // Actualizar contadores
+    document.getElementById('contador-victorias').textContent = contadorVictorias;
+    document.getElementById('contador-tablas').textContent = contadorTablas;
+    document.getElementById('contador-derrotas').textContent = contadorDerrotas;
+    
+    // Rellenar las tablas por resultado
+    function llenarTabla(id, contenido, mensaje) {
+      const tbody = document.getElementById(id);
+      if (contenido) {
+        tbody.innerHTML = contenido;
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-4">
+              <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>${mensaje}
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+    
+    llenarTabla('tbody-victorias', contenidoVictorias, 'No hay victorias registradas.');
+    llenarTabla('tbody-tablas', contenidoTablas, 'No hay encuentros con tablas registrados.');
+    llenarTabla('tbody-derrotas', contenidoDerrotas, 'No hay derrotas registradas.');
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,912 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Encuentro{% endblock %}
+
+{% block content %}
+<div class="container py-2 py-md-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <h2 class="mb-2 mb-md-0 d-flex align-items-center fs-4 fs-md-3">
+        <i class="bi bi-calendar-event me-2"></i>
+        {{ titulo|default:"Registrar encuentro" }}
+      </h2>
+
+      {% if encuentro %}
+        <a class="btn btn-warning mt-2 mt-md-0" href="{% url 'ver_encuentro' pk=encuentro.idEncuentro %}">
+          Ver encuentro #{{ encuentro.idEncuentro }}
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" id="encuentroForm"
+        action="{% if encuentro %}{% url 'editar_encuentro' encuentro.idEncuentro %}{% else %}{% url 'crear_encuentro' %}{% endif %}"
+        class="needs-validation" novalidate>
+
+        {% csrf_token %}
+
+        <!-- Primera fila del formulario - Responsive -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label for="{{ form.fechaYHora.id_for_label }}" class="form-label">
+              <i class="bi bi-calendar2-date me-1"></i>Fecha y hora <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              {{ form.fechaYHora }}
+              <span class="input-group-text bg-light">
+                <i class="bi bi-calendar-date text-primary"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label for="{{ form.video.id_for_label }}" class="form-label">
+              <i class="bi bi-camera-video me-1"></i>{{ form.video.label }} (Opcional)
+            </label>
+
+            <div class="input-group">
+              {% if form.instance.video %}
+              <span class="input-group-text text-truncate" style="max-width: 150px;"
+                title="{{ form.instance.video.name }}">
+                <small class="text-muted d-block mb-0">Actual:</small>
+                <a href="{{ form.instance.video.url }}" class="d-block text-truncate text-decoration-none">
+                  {{ form.instance.video.name }}
+                </a>
+              </span>
+              {% endif %}
+
+              <input type="file" name="{{ form.video.name }}" id="{{ form.video.id_for_label }}" accept="video/*"
+                class="form-control" />
+
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="bi bi-upload"></i>
+              </button>
+            </div>
+
+            <div class="form-text text-muted mt-1">
+              {% if form.instance.video %}¿Cambiar video?{% else %}Sube tu video{% endif %} (MP4, MOV, AVI)
+            </div>
+          </div>
+        </div>
+
+        <!-- Segunda fila del formulario - Responsive -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <div class="form-floating position-relative">
+              {{ form.galpon1 }}
+              <label for="{{ form.galpon1.id_for_label }}">Galpón 1: <span class="text-danger">*</span></label>
+              
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-house text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirGalpon1" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-floating position-relative">
+              {{ form.galpon2 }}
+              <label for="{{ form.galpon1.id_for_label }}">Galpón 2: <span class="text-danger">*</span></label>
+              
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-house text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirGalpon2" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Campos monetarios - Responsive -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-currency-dollar"></i></span>
+              {{ form.pactada }}
+              <span class="input-group-text">$</span>
+            </div>
+            <label for="{{ form.pactada.id_for_label }}" class="form-label">{{ form.pactada.label }}</label>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-currency-dollar"></i></span>
+              {{ form.apuesta_general }}
+              <span class="input-group-text">$</span>
+            </div>
+            <label for="{{ form.apuesta_general.id_for_label }}" class="form-label">
+              {{ form.apuesta_general.label}} <span class="text-danger">*</span></label>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-cash-coin"></i></span>
+              {{ form.pago_juez }}
+              <span class="input-group-text">$</span>
+            </div>
+            <label for="{{ form.pago_juez.id_for_label }}" class="form-label">{{ form.pago_juez.label }}</label>
+          </div>
+        </div>
+
+        <!-- Más campos monetarios - Responsive -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-cash-stack"></i></span>
+              {{ form.apuesta_por_fuera }}
+              <span class="input-group-text">$</span>
+            </div>
+            <label for="{{ form.apuesta_por_fuera.id_for_label }}" class="form-label">
+              {{ form.apuesta_por_fuera.label}}</label>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-trophy"></i></span>
+              {{ form.premio_mayor }}
+              <span class="input-group-text">$</span>
+            </div>
+            <label for="{{ form.premio_mayor.id_for_label }}" class="form-label">Valor total del pollón</label>
+          </div>
+
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-percent"></i></span>
+              {{ form.porcentaje_premio_mayor }}
+              <span class="input-group-text">%</span>
+            </div>
+            <label for="{{ form.porcentaje_premio_mayor.id_for_label }}" class="form-label">% de la apuesta general para el careador <span class="text-danger">*</span></label>
+          </div>
+        </div>
+
+        <!-- Resultado y condición - Responsive -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-4">
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-flag me-1"></i></span>
+              {{ form.resultado }}
+            </div>
+            <label for="{{ form.resultado.id_for_label }}" class="form-label">
+              {{ form.resultado.label }} <span class="text-danger">*</span>
+            </label>
+          </div>
+          
+          <div class="col-12 col-md-4">
+            <div class="form-floating position-relative">
+              {{ form.condicionGallo }}
+              <label for="{{ form.condicionGallo.id_for_label }}">Condición del gallo luego del encuentro <span class="text-danger">*</span></label>
+              
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-bandaid text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirEstado" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-12 col-md-4">
+            <label for="{{ form.imagen_evento.id_for_label }}" class="form-label">
+              <i class="bi bi-image me-1"></i>Imagen del evento (Opcional)
+            </label>
+
+            <div class="input-group">
+              {% if form.instance.imagen_evento %}
+              <span class="input-group-text text-truncate" style="max-width: 150px;"
+                title="{{ form.instance.imagen_evento.name }}">
+                <small class="text-muted d-block mb-0">Actual:</small>
+                <a href="{{ form.instance.imagen_evento.url }}" class="d-block text-truncate text-decoration-none">
+                  {{ form.instance.imagen_evento.name }}
+                </a>
+              </span>
+              {% endif %}
+
+              <input type="file" name="{{ form.imagen_evento.name }}" id="{{ form.imagen_evento.id_for_label }}" accept="image/*"
+                class="form-control" />
+
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="bi bi-upload"></i>
+              </button>
+            </div>
+
+            <div class="form-text text-muted mt-1">
+              {% if form.instance.imagen_evento %}¿Cambiar?{% else %}Subir{% endif %} (JPG, PNG)
+            </div>
+          </div>
+        </div>
+
+        <!-- Selección de gallo - Responsive -->
+        <div class="card mt-4 mb-4 border-primary">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-award me-2"></i>Gallo Participante
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-column flex-md-row align-items-center">
+              <button type="button" class="btn btn-outline-primary mb-2 mb-md-0" data-bs-toggle="modal"
+                data-bs-target="#modalParticipantes">
+                <i class="bi bi-search me-1"></i>Seleccionar Gallo
+              </button>
+
+              <div id="galloSeleccionado" class="ms-md-3 text-center text-md-start">
+                {% if encuentro and encuentro.gallo %}
+                <span class="badge bg-success p-2 mt-2 mt-md-0">
+                  <i class="bi bi-tag-fill me-1"></i>Placa {{ encuentro.gallo.nroPlaca }}
+                </span>
+                {% else %}
+                <span class="badge bg-secondary p-2 mt-2 mt-md-0">No seleccionado</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <input type="hidden" name="gallo" id="galloHidden" value="{{ encuentro.gallo.idGallo|default:'' }}">
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button type="button" id="btnCalcularGastos" class="btn btn-danger">
+            <i class="bi bi-calculator me-2"></i>Calcular Gastos
+          </button>
+        </div>
+
+        <!-- Sección de cálculos - Responsive -->
+        <div class="card mt-4 mb-4 border-primary" id="cardCalculos" style="display: none;">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-calculator me-2"></i>Cálculos del Encuentro
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <!-- Columna Izquierda - Responsive -->
+              <div class="col-12 col-md-6 mb-4">
+                <div class="bg-light p-3 rounded mb-3">
+                  <h5 class="text-primary mb-3"><i class="bi bi-coin me-2"></i>Detalles de Apuestas</h5>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2 pt-2">
+                    <span>1. Apuesta general:</span>
+                    <strong class="text-success">$<span id="valorApuestaGeneral"></span></strong>
+                  </div>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2 pt-2">
+                    <span>2. Apuesta por fuera:</span>
+                    <strong class="text-success">$<span id="valorApuestaPorFuera"></span></strong>
+                  </div>
+                </div>
+
+                <div class="bg-light p-3 rounded mb-3">
+                  <h5 class="text-primary mb-3"><i class="bi bi-calculator me-2"></i>Cálculo del pago del careador</h5>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2">
+                    <span>3. Sobre el pollón (15% de <span id="valorTotalPollon"></span>):</span>
+                    <strong class="text-danger"><span id="valorPagoPollon"></span></strong>
+                  </div>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2">
+                    <span>4. Sobre la apuesta general (<span id="valorPorcentajeApuestaGeneral"></span>% de <span id="valorTotalApuestaGeneral"></span>):</span>
+                    <strong class="text-danger"><span id="valorPagoApuestaGeneral"></span></strong>
+                  </div>
+
+                </div>
+
+                <div class="bg-light p-3 rounded mb-3">
+                  <h5 class="text-primary mb-3"><i class="bi bi-cash-coin me-2"></i>Transacciones</h5>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2">
+                    <span>5. Pago del juez:</span>
+                    <strong class="text-danger">$<span id="pagoJuez"></span></strong>
+                  </div>
+
+                  <div class="d-flex justify-content-between border-bottom pb-2">
+                    <span>6. Pactada:</span>
+                    <strong class="text-danger">$<span id="valorPactada"></span></strong>
+                  </div>
+
+                  <div class="alert mt-3" id="divResultado">
+                    <h6><i class="bi bi-trophy me-2"></i>Resultado:</h6>
+                    <strong class="h5" id="resultadoEncuentro"></strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna Derecha - Responsive -->
+              <div class="col-12 col-md-6">
+                <div class="bg-light p-3 rounded mb-3">
+                  <h5 class="text-primary mb-3"><i class="bi bi-graph-up me-2"></i>Ganancias</h5>
+                  <div class="mb-2">
+                    <span class="d-block">Pollón (<span id="valorPollonGanancias"></span>)</span>
+                    <span class="d-block">General (<span id="valorApuestaGeneralGanancias"></span>)</span>
+                    <span class="d-block">Por fuera (<span id="valorApuestaPorFueraGanancias"></span>)</span>
+                    <hr>
+                    <strong class="text-success h5">$<span id="ganancias"></span></strong>
+                  </div>
+                </div>
+
+                <div class="bg-light p-3 rounded mb-3">
+                  <h5 class="text-primary mb-3"><i class="bi bi-graph-down me-2"></i>Gastos</h5>
+                  <div class="mb-2">
+                    <span class="d-block">Pago del juez (<span id="valorPagoJuezGastos"></span>)</span>
+                    <span class="d-block">Pago del careador (<span id="valorPagoCareador"></span>)</span>
+                    <span class="d-block">Pactada (<span id="valorPactadaGastos"></span>)</span>
+                    <span class="d-block" id="contenedorvalorTotalApostado">Total apostado (<span id="valorTotalApostado"></span>)</span>
+                    
+                    <hr>
+                    <strong class="text-danger h5">$<span id="gastos"></span></strong>
+                  </div>
+                </div>
+
+                <div class="bg-primary p-3 rounded text-white">
+                  <h5><i class="bi bi-wallet2 me-2"></i>Total Final</h5>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="d-block">Ganancias: $<span id="valorGananciasTotal"></span></span>
+                      <span class="d-block">Gastos: $<span id="valorGastosTotal"></span></span>
+                    </div>
+                    <strong class="h3">$<span id="total"></span></strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button type="button" class="btn btn-danger mt-3" id="btnCerrarCalculos">
+                <i class="bi bi-x-circle me-2"></i>Cerrar cálculos
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones finales - Responsive -->
+        <div class="d-flex flex-column flex-md-row gap-2 order-0 order-md-1 w-100 w-md-auto mt-4">
+          <a href="{% url 'listar_encuentros' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+          </a>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save me-1"></i>Guardar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Selección de Gallo -->
+<div class="modal fade" id="modalParticipantes" tabindex="-1" aria-labelledby="modalParticipantesLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalParticipantesLabel">
+          <i class="bi bi-award me-2"></i>Seleccionar Gallo Participante
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>Haga clic en una fila para seleccionar un gallo.
+        </div>
+
+        <div class="mb-3">
+          <input type="text" class="form-control" id="buscarPlaca" placeholder="Buscar por placa...">
+        </div>
+
+        <div class="table-responsive modal-table-container" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-bordered table-hover" id="tablaGallos">
+            <thead class="table-light">
+              <tr>
+                <th><i class="bi bi-tag me-1"></i>Placa</th>
+                <th><i class="bi bi-palette me-1"></i>Color</th>
+                <th><i class="bi bi-gender-ambiguous me-1"></i>Sexo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for gallo in gallos %}
+              <tr class="gallo-row" data-placa="{{ gallo.nroPlaca }}" data-idgallo="{{ gallo.idGallo }}">
+                <td>{{ gallo.nroPlaca }}</td>
+                <td>{{ gallo.color }}</td>
+                <td>{{ gallo.get_sexo_display }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmarGallo" disabled>
+          <i class="bi bi-check-circle me-1"></i>Confirmar Selección
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  
+  /*
+  const duenosOptions = [
+    {% for dueno in duenos %}
+      {
+        id: {{ dueno.id }},
+        nombre: "{{ dueno.nombre }}",
+        galpones: [
+          {% for galpon in dueno.galpon_set.all %}
+            { id: {{ galpon.id }}, nombre: "{{ galpon.nombre }}" }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }
+      {% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+*/
+
+  function addUpperCaseListenerToSwalInputs() {
+    const observer = new MutationObserver((mutationsList) => {
+      mutationsList.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          const swalInputs = document.querySelectorAll('.swal2-input');
+          swalInputs.forEach(input => {
+            if (!input.hasAttribute('data-upper-case-listener')) {
+              input.addEventListener('input', () => {
+                input.value = input.value.toUpperCase();
+              });
+              input.setAttribute('data-upper-case-listener', 'true');
+            }
+          });
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  const inputsABloquear = ['id_premio_mayor', 'id_porcentaje_premio_mayor', 'id_pago_juez'];
+  const inputsABloquearSinJuez = ['id_premio_mayor', 'id_porcentaje_premio_mayor'];
+  document.addEventListener('DOMContentLoaded', function () {
+    addUpperCaseListenerToSwalInputs();
+
+    const selectElemento = document.getElementById('id_resultado');
+    const valorSeleccioado = selectElemento.value;
+
+    if (valorSeleccioado === 'V') {
+      habilitarInputs(inputsABloquear);
+    } else if (valorSeleccioado === 'T') {
+      habilitarInputs(inputsABloquear);
+      limpiarYBloquearInputs(inputsABloquearSinJuez);
+    } else {
+      limpiarYBloquearInputs(inputsABloquear);
+    }
+
+
+function añadirGalpon(selectId) {
+  Swal.fire({
+    title: 'Registrar nuevo galpón',
+    html:
+      '<input id="swal-nombre" class="swal2-input" placeholder="Nombre del galpón">',
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Registrar',
+    cancelButtonText: 'Cancelar',
+    preConfirm: () => {
+      const nombre = document.getElementById('swal-nombre').value.trim();
+      if (!nombre) {
+        Swal.showValidationMessage('El nombre es obligatorio');
+      }
+      return { nombre };
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const { nombre } = result.value;
+
+      fetch("{% url 'galpon_create_ajax' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: new URLSearchParams({
+          'nombre': nombre
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const selectGalpon = document.getElementById(selectId);
+            const otroSelectId = (selectId === 'id_galpon1') ? 'id_galpon2' : 'id_galpon1';
+            const otroSelect = document.getElementById(otroSelectId);
+
+            const nuevaOpcionGalpon = document.createElement('option');
+            nuevaOpcionGalpon.value = data.id;
+            nuevaOpcionGalpon.textContent = `${data.nombre}`;
+
+            const nuevaOpcionOtroGalpon = nuevaOpcionGalpon.cloneNode(true);
+
+            selectGalpon.appendChild(nuevaOpcionGalpon);
+            otroSelect.appendChild(nuevaOpcionOtroGalpon);
+
+            nuevaOpcionGalpon.selected = true;
+
+            Swal.fire('¡Éxito!', 'Galpón registrado correctamente.', 'success');
+          } else {
+            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          Swal.fire('Error', 'Error en la petición.', 'error');
+        });
+    }
+  });
+}
+
+    function añadirEstado(selectId) {
+      Swal.fire({
+        title: 'Ingresa nuevo estado:',
+        input: 'text',
+        inputPlaceholder: 'Introduce el nombre aquí',
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (inputValue) => {
+          if (!inputValue) {
+            Swal.showValidationMessage('¡Por favor, ingresa algo!');
+          }
+          return inputValue;
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const nombre = result.value;
+
+          fetch("{% url 'estado_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nombre': nombre,
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const selectEstado = document.getElementById(selectId);
+
+                // Crear la nueva opción para el select de estado
+                const nuevaOpcionEstado = document.createElement('option');
+                nuevaOpcionEstado.value = data.id;
+                nuevaOpcionEstado.textContent = data.nombre;
+
+                // Añadir la nueva opción al select
+                selectEstado.appendChild(nuevaOpcionEstado);
+
+                // Seleccionar la nueva opción
+                nuevaOpcionEstado.selected = true;
+
+                Swal.fire('¡Éxito!', 'Estado registrado correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
+    }
+
+    /*
+    document.getElementById('btnAniadirDueno').addEventListener('click', function () {
+      añadirDueno('id_duenoEvento');
+    });*/
+
+    document.getElementById('btnAniadirEstado').addEventListener('click', function () {
+      añadirEstado('id_condicionGallo');
+    });
+
+    document.getElementById('btnAniadirGalpon1').addEventListener('click', function () {
+      añadirGalpon('id_galpon1');
+    });
+
+    document.getElementById('btnAniadirGalpon2').addEventListener('click', function () {
+      añadirGalpon('id_galpon2');
+    });
+
+  });
+
+  const arregloDeInputs = ['id_pactada', 'id_apuesta_general', 'id_pago_juez', 'id_apuesta_por_fuera', 'id_premio_mayor', 'id_porcentaje_premio_mayor']
+  arregloDeInputs.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    input.addEventListener('keydown', (evt) => {
+      if (["e", "E", "+", "-"].includes(evt.key)) {
+        evt.preventDefault();
+      }
+    });
+  });
+
+
+  function calcular(pactada, apuestaGeneral, pagoJuez, apuestaPorFuera, totalPollon, porcentajePollon, resultado, resultadoTextual) {
+    let porcentajeCareadorApuestaGeneral = porcentajePollon / 100;
+    let pagoCareadorPollon = totalPollon * 0.15;
+    let pagoCareadorApuestaGeneral = apuestaGeneral * porcentajeCareadorApuestaGeneral
+
+    let dineroLuegoDeLaApuesta = 0;
+    let pagoCareador = 0;
+    let gastos = 0;
+    let dineroFinal = 0;
+
+    let totalApostado = apuestaGeneral + apuestaPorFuera;
+
+    let divResultado = document.getElementById("divResultado");
+    const contenedorvalorTotalApostado = document.getElementById('contenedorvalorTotalApostado');
+
+    try {
+      switch (resultado) {
+        case 'V': // Victoria
+          contenedorvalorTotalApostado.classList.remove('d-block');
+          contenedorvalorTotalApostado.classList.add('d-none');
+          dineroLuegoDeLaApuesta = totalApostado + totalPollon;
+          pagoCareador = pagoCareadorPollon + pagoCareadorApuestaGeneral;
+          gastos = pagoCareador + pagoJuez + pactada;// + totalApostado;
+          dineroFinal = dineroLuegoDeLaApuesta - gastos;
+          
+          divResultado.classList.remove("alert-danger", "alert-warning");
+          divResultado.classList.add("alert-success");
+          document.getElementById('valorTotalApostado').innerText = totalApostado.toFixed(2);
+          break;
+        case 'T': // Tablas
+          contenedorvalorTotalApostado.classList.remove('d-none');
+          contenedorvalorTotalApostado.classList.add('d-block');
+          pagoJuez = 0;
+          dineroLuegoDeLaApuesta = totalApostado;
+          gastos = pactada + totalApostado;
+          dineroFinal = dineroLuegoDeLaApuesta - gastos;
+          divResultado.classList.remove("alert-danger", "alert-success");
+          divResultado.classList.add("alert-warning");
+          document.getElementById('valorTotalApostado').innerText = totalApostado.toFixed(2);
+          break;
+        case 'D': // Derrota
+          contenedorvalorTotalApostado.classList.remove('d-block');
+          contenedorvalorTotalApostado.classList.add('d-none');
+          pagoJuez = 0;
+          dineroLuegoDeLaApuesta = -totalApostado;
+          gastos = pactada;
+          dineroFinal = dineroLuegoDeLaApuesta - gastos;
+          apuestaGeneral = -apuestaGeneral;
+          apuestaPorFuera = -apuestaPorFuera;
+          divResultado.classList.remove("alert-warning", "alert-success");
+          divResultado.classList.add("alert-danger");
+          break;
+        default:
+          Swal.fire({
+            title: 'Atención',
+            text: 'El resultado seleccionado para el encuentro no es válido',
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+          });
+          return;
+      }
+
+
+      // Mostrar resultados en el card
+      cardCalculos.style.display = 'block';
+      document.getElementById('valorPactada').innerText = pactada.toFixed(2);
+      document.getElementById('valorApuestaGeneral').innerText = apuestaGeneral.toFixed(2);
+      document.getElementById('pagoJuez').innerText = pagoJuez.toFixed(2);
+      document.getElementById('valorApuestaPorFuera').innerText = apuestaPorFuera.toFixed(2);
+      document.getElementById('resultadoEncuentro').innerText = resultadoTextual;
+
+      // Llenar los valores dentro de los paréntesis
+      document.getElementById('valorPollonGanancias').innerText = totalPollon.toFixed(2);
+      document.getElementById('valorApuestaGeneralGanancias').innerText = apuestaGeneral.toFixed(2);
+      document.getElementById('valorApuestaPorFueraGanancias').innerText = apuestaPorFuera.toFixed(2);
+
+      document.getElementById('valorPagoJuezGastos').innerText = pagoJuez.toFixed(2);
+      document.getElementById('valorPagoCareador').innerText = pagoCareador.toFixed(2);
+      document.getElementById('valorPactadaGastos').innerText = pactada.toFixed(2);
+
+      // Ganancias y gastos
+      document.getElementById('ganancias').innerText = dineroLuegoDeLaApuesta.toFixed(2);
+      document.getElementById('gastos').innerText = gastos.toFixed(2);
+      document.getElementById('total').innerText = dineroFinal.toFixed(2);
+
+      // Llenar los totales en los paréntesis de Ganancias y Gastos
+      document.getElementById('valorGananciasTotal').innerText = dineroLuegoDeLaApuesta.toFixed(2);
+      document.getElementById('valorGastosTotal').innerText = gastos.toFixed(2);
+
+      //sobre el pago del careador
+      document.getElementById('valorTotalPollon').innerText = totalPollon.toFixed(2);
+      document.getElementById('valorPagoPollon').innerText = pagoCareadorPollon.toFixed(2);
+
+      document.getElementById('valorPorcentajeApuestaGeneral').innerText = porcentajePollon.toFixed(2);
+      document.getElementById('valorTotalApuestaGeneral').innerText = apuestaGeneral.toFixed(2);
+      document.getElementById('valorPagoApuestaGeneral').innerText = pagoCareadorApuestaGeneral.toFixed(2);
+
+
+    } catch (error) {
+      console.error("Error en el cálculo: ", error);
+      return;
+    }
+  }
+
+
+  const btnCalcularGastos = document.getElementById("btnCalcularGastos");
+  btnCalcularGastos.addEventListener('click', function () {
+    let pactada = parseFloat(document.getElementById('id_pactada').value) || 0;
+    let apuestaGeneral = parseFloat(document.getElementById('id_apuesta_general').value) || 0;
+    let pagoJuez = parseFloat(document.getElementById('id_pago_juez').value) || 0;
+    let apuestaPorFuera = parseFloat(document.getElementById('id_apuesta_por_fuera').value) || 0;
+    let totalPollon = parseFloat(document.getElementById('id_premio_mayor').value) || 0;
+    let porcentajePollon = parseFloat(document.getElementById('id_porcentaje_premio_mayor').value) || 0;
+    let resultado = document.getElementById('id_resultado').value;
+    let resultadoTextual = document.querySelector('#id_resultado option:checked').textContent;
+
+    calcular(pactada, apuestaGeneral, pagoJuez, apuestaPorFuera, totalPollon, porcentajePollon, resultado, resultadoTextual);
+  });
+
+  //para cerrar el card de cálculos
+  const btnCerrarCalculos = document.getElementById("btnCerrarCalculos");
+  btnCerrarCalculos.addEventListener('click', function () {
+    const cardCalculos = document.getElementById("cardCalculos");
+    cardCalculos.style.display = 'none';
+  });
+
+  // bloquear inputs de premio mayor y porcentaje
+  const selectResultado = document.getElementById('id_resultado');
+
+
+  function limpiarYBloquearInputs(arreglo) {
+    arreglo.forEach(id => {
+      const input = document.getElementById(id);
+      input.value = '';
+      input.disabled = true;
+      input.style.backgroundColor = '#E7E7E7';
+    });
+  }
+
+  function habilitarInputs(arreglo) {    
+    arreglo.forEach(id => {
+      const input = document.getElementById(id);
+      input.disabled = false;
+      input.style.backgroundColor = '';
+    });
+  }
+
+  selectResultado.addEventListener('change', function () {
+    const valorSeleccionado = selectResultado.value;
+    
+    if (valorSeleccionado === 'V') {
+      habilitarInputs(inputsABloquear);
+    } else if (valorSeleccionado === 'T') {
+      habilitarInputs(inputsABloquear);
+      limpiarYBloquearInputs(inputsABloquearSinJuez);
+    } else {
+      limpiarYBloquearInputs(inputsABloquear);
+    }
+
+  });
+
+
+
+  // Función de búsqueda
+  document.getElementById('buscarPlaca').addEventListener('input', function (e) {
+    const searchTerm = e.target.value.toLowerCase();
+
+    document.querySelectorAll('#tablaGallos .gallo-row').forEach(row => {
+      const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+      row.style.display = placa.includes(searchTerm) ? '' : 'none';
+    });
+
+    // Resetear selección al buscar
+    if (filaSeleccionada && filaSeleccionada.style.display === 'none') {
+      filaSeleccionada.classList.remove('table-primary');
+      galloSeleccionadoPlaca = null;
+      document.getElementById('confirmarGallo').disabled = true;
+    }
+  });
+
+  // Resetear búsqueda al abrir modal
+  document.getElementById('modalParticipantes').addEventListener('show.bs.modal', function () {
+    document.getElementById('buscarPlaca').value = '';
+    document.querySelectorAll('#tablaGallos .gallo-row').forEach(row => row.style.display = '');
+  });
+
+  let idGalloSeleccionado = null;
+  let galloSeleccionadoPlaca = null;
+  let filaSeleccionada = null;
+
+  // Seleccionar fila de gallo
+  document.querySelectorAll('#tablaGallos .gallo-row').forEach(row => {
+    row.addEventListener('click', function () {
+      document.querySelectorAll('#tablaGallos .gallo-row').forEach(r => {
+        r.classList.remove('table-primary');
+      });
+
+      this.classList.add('table-primary');
+      filaSeleccionada = this;
+      galloSeleccionadoPlaca = this.dataset.placa;
+      idGalloSeleccionado = this.dataset.idgallo;
+      document.getElementById('confirmarGallo').disabled = false;
+    });
+  });
+
+  // Confirmar selección de gallo
+  document.getElementById("confirmarGallo").addEventListener("click", function () {
+    const cont = document.getElementById("galloSeleccionado");
+
+    if (galloSeleccionadoPlaca) {
+      cont.innerHTML = '';
+      cont.innerHTML = `<span class="badge bg-success p-2"><i class="bi bi-tag-fill me-1"></i>Placa ${galloSeleccionadoPlaca}</span>`; //setear placa
+      document.getElementById("galloHidden").value = idGalloSeleccionado;//setear id
+      var modalEl = document.getElementById('modalParticipantes');
+      var modal = bootstrap.Modal.getInstance(modalEl);
+      modal.hide();
+    }
+  });
+
+  document.getElementById('modalParticipantes').addEventListener('show.bs.modal', function () {
+    document.querySelectorAll('#tablaGallos .gallo-row').forEach(r => {
+      r.classList.remove('table-primary');
+    });
+
+    document.getElementById('confirmarGallo').disabled = true;
+
+    const galloPlaca = document.getElementById("galloHidden").value;
+    if (galloPlaca) {
+      const filaPrevia = document.querySelector(`#tablaGallos .gallo-row[data-placa="${galloPlaca}"]`);
+      if (filaPrevia) {
+        filaPrevia.classList.add('table-primary');
+        filaSeleccionada = filaPrevia;
+        galloSeleccionadoPlaca = galloPlaca;
+        document.getElementById('confirmarGallo').disabled = false;
+      }
+    }
+  });
+
+  document.getElementById("encuentroForm").addEventListener("submit", function (e) {
+    const galloPlaca = document.getElementById("galloHidden").value;
+
+    if (!galloPlaca) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning',
+        title: 'Atención',
+        text: 'Debe seleccionar un gallo participante',
+        confirmButtonColor: '#0d6efd'
+      });
+    }
+  });
+
+  (function () {
+    'use strict';
+
+    var forms = document.querySelectorAll('.needs-validation');
+
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity() && document.getElementById("galloHidden").value) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+
+{% endblock %}
