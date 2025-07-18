@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-k&gi0thnr@vy*o$d$c9=t$g_+0isqr=+&d@1%jcd7!csyt8ih7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['feloy.pythonanywhere.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['feloy.pythonanywhere.com', 'gll-service.onrender.com','127.0.0.1', 'localhost']
 
 
 # Application definition
