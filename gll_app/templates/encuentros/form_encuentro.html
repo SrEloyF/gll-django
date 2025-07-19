@@ -253,7 +253,7 @@
           </div>
         </div>
 
-        <div class="d-grid">
+        <div class="d-flex justify-content-center">
           <button type="button" id="btnCalcularGastos" class="btn btn-danger">
             <i class="bi bi-calculator me-2"></i>Calcular Gastos
           </button>
@@ -336,7 +336,7 @@
                   <h5 class="text-primary mb-3"><i class="bi bi-graph-down me-2"></i>Gastos</h5>
                   <div class="mb-2">
                     <span class="d-block">Pago del juez (<span id="valorPagoJuezGastos"></span>)</span>
-                    <span class="d-block">Pago del careador (<span id="valorPagoCareador"></span>)</span>
+                    <span class="d-block">Pago total del careador (<span id="valorPagoCareador"></span>)</span>
                     <span class="d-block">Pactada (<span id="valorPactadaGastos"></span>)</span>
                     <span class="d-block" id="contenedorvalorTotalApostado">Total apostado (<span id="valorTotalApostado"></span>)</span>
                     
@@ -358,7 +358,7 @@
               </div>
             </div>
 
-            <div class="d-grid">
+            <div class="d-flex justify-content-center">
               <button type="button" class="btn btn-danger mt-3" id="btnCerrarCalculos">
                 <i class="bi bi-x-circle me-2"></i>Cerrar cálculos
               </button>
@@ -672,9 +672,9 @@ function añadirGalpon(selectId) {
         case 'T': // Tablas
           contenedorvalorTotalApostado.classList.remove('d-none');
           contenedorvalorTotalApostado.classList.add('d-block');
-          pagoJuez = 0;
+          //pagoJuez = 0;
           dineroLuegoDeLaApuesta = totalApostado;
-          gastos = pactada + totalApostado;
+          gastos = pactada + totalApostado + pagoJuez;
           dineroFinal = dineroLuegoDeLaApuesta - gastos;
           divResultado.classList.remove("alert-danger", "alert-success");
           divResultado.classList.add("alert-warning");
@@ -683,9 +683,9 @@ function añadirGalpon(selectId) {
         case 'D': // Derrota
           contenedorvalorTotalApostado.classList.remove('d-block');
           contenedorvalorTotalApostado.classList.add('d-none');
-          pagoJuez = 0;
+          //pagoJuez = 0;
           dineroLuegoDeLaApuesta = -totalApostado;
-          gastos = pactada;
+          gastos = pactada + pagoJuez;
           dineroFinal = dineroLuegoDeLaApuesta - gastos;
           apuestaGeneral = -apuestaGeneral;
           apuestaPorFuera = -apuestaPorFuera;

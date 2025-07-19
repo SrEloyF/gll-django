@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% block title %}Filtros avanzados - Gallos{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-list-ul text-primary me-3 fs-2"></i>
+          <h2 class="mb-0 fw-bold text-dark">Listado de Gallos</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Form Section -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-funnel text-primary me-2"></i>
+        <h5 class="mb-0 fw-semibold">Filtros de Búsqueda</h5>
+      </div>
+      
+      <form method="get" class="row g-3">
+        <div class="col-12 col-md-6 col-lg-4">
+          <label class="form-label fw-medium text-muted mb-2">
+            <i class="bi bi-columns-gap me-1"></i>
+            Columna
+          </label>
+          <select name="columna" class="form-select form-select-lg shadow-sm">
+            <option value="">-- Selecciona columna --</option>
+            <option value="nroPlaca">
+              <i class="bi bi-hash"></i> Número de Placa
+            </option>
+            <option value="fechaNac">Fecha de Nacimiento</option>
+            <option value="color">Color</option>
+            <option value="sexo">Sexo</option>
+            <option value="tipoGallo">Tipo de Gallo</option>
+            <option value="peso">Peso</option>
+            <option value="nroPlacaAnterior">Placa Anterior</option>
+            <option value="nombreDuenoAnterior">Dueño Anterior</option>
+            <option value="estadoDeSalud">Estado de Salud</option>
+            <option value="fechaMuerte">Fecha de Muerte</option>
+          </select>
+        </div>
+        
+        <div class="col-12 col-md-6 col-lg-5" id="valor-container">
+          <label class="form-label fw-medium text-muted mb-2">
+            <i class="bi bi-search me-1"></i>
+            Valor a buscar
+          </label>
+          <input type="text" name="valor" class="form-control form-control-lg shadow-sm" 
+                 placeholder="Ingresa el término de búsqueda..." id="valor-input">
+        </div>
+        
+        <div class="col-12 col-lg-3">
+          <label class="form-label fw-medium text-muted mb-2 opacity-0">Acciones</label>
+          <div class="d-flex gap-2 flex-column flex-sm-row">
+            <button type="submit" class="btn btn-primary btn-lg flex-fill shadow-sm">
+              <i class="bi bi-search me-2"></i>
+              <span class="d-none d-sm-inline">Buscar</span>
+            </button>
+            <a href="{% url 'filtros_gallos' %}" class="btn btn-outline-secondary btn-lg flex-fill shadow-sm">
+              <i class="bi bi-arrow-clockwise me-2"></i>
+              <span class="d-none d-sm-inline">Limpiar</span>
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light border-0 py-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-table text-primary me-2"></i>
+          <h6 class="mb-0 fw-semibold">Resultados</h6>
+        </div>
+        <div class="d-flex align-items-center text-muted small">
+          <i class="bi bi-info-circle me-1"></i>
+          Desliza para ver más columnas
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-body p-0">
+      <!-- Mobile Cards (visible on small screens) -->
+      <div class="d-block d-lg-none">
+        {% for gallo in page_obj %}
+        <div class="border-bottom p-3">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="d-flex align-items-center">
+              <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                   style="width: 40px; height: 40px; font-size: 14px;">
+                {{ gallo.idGallo }}
+              </div>
+              <div>
+                <h6 class="mb-1 fw-bold">
+                  {% if gallo.nroPlaca %}
+                    Placa: {{ gallo.nroPlaca }}
+                  {% else %}
+                    ID: {{ gallo.idGallo }}
+                  {% endif %}
+                </h6>
+                <small class="text-muted">
+                  <i class="bi bi-calendar me-1"></i>
+                  {{ gallo.fechaNac }}
+                </small>
+              </div>
+            </div>
+            {% if gallo.nombre_img %}
+            <img src="{{ gallo.nombre_img.url }}" alt="Imagen" class="rounded" width="50" height="50" style="object-fit: cover;">
+            {% endif %}
+          </div>
+          
+          <div class="row g-2 mb-3 small">
+            <div class="col-6">
+              <div class="bg-light p-2 rounded">
+                <i class="bi bi-palette me-1 text-primary"></i>
+                <strong>Color:</strong> {{ gallo.color }}
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light p-2 rounded">
+                <i class="bi bi-gender-ambiguous me-1 text-primary"></i>
+                <strong>Sexo:</strong> {{ gallo.sexo }}
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light p-2 rounded">
+                <i class="bi bi-tag me-1 text-primary"></i>
+                <strong>Tipo:</strong> {{ gallo.get_tipoGallo_display }}
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light p-2 rounded">
+                <i class="bi bi-speedometer2 me-1 text-primary"></i>
+                <strong>Peso:</strong> 
+                {% if gallo.peso %}{{ gallo.peso }}{% else %}---{% endif %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-1 justify-content-end">
+            <a href="{% url 'ver' gallo.idGallo %}" class="btn btn-outline-primary btn-sm" title="Ver detalles">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="{% url 'editar' gallo.idGallo %}" class="btn btn-outline-warning btn-sm" title="Editar">
+              <i class="bi bi-pencil-square"></i>
+            </a>
+            <button type="button" class="btn btn-outline-danger btn-sm"
+                onclick="confirmarEliminacion('{{ gallo.idGallo }}')" title="Eliminar">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+          <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+          <h5 class="text-muted mt-3">No hay registros disponibles</h5>
+          <p class="text-muted">Intenta ajustar tus filtros de búsqueda</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Desktop Table (hidden on small screens) -->
+      <div class="table-responsive d-none d-lg-block">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="fw-semibold text-center" style="width: 60px;">
+                <i class="bi bi-hash text-primary"></i>
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-credit-card-2-front text-primary me-1"></i>
+                Placa
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-calendar-event text-primary me-1"></i>
+                F. Nac.
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-palette text-primary me-1"></i>
+                Color
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-gender-ambiguous text-primary me-1"></i>
+                Sexo
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-tag text-primary me-1"></i>
+                Tipo
+              </th>
+              <th class="fw-semibold">
+                <i class="bi bi-speedometer2 text-primary me-1"></i>
+                Peso
+              </th>
+              <th class="fw-semibold">Placa Ant.</th>
+              <th class="fw-semibold">Dueño Ant.</th>
+              <th class="fw-semibold">
+                <i class="bi bi-heart-pulse text-primary me-1"></i>
+                Estado
+              </th>
+              <th class="fw-semibold">F. Muerte</th>
+              <th class="fw-semibold text-center">
+                <i class="bi bi-image text-primary"></i>
+              </th>
+              <th class="fw-semibold text-center" style="width: 140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gallo in page_obj %}
+            <tr class="border-bottom">
+              <td class="text-center">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                     style="width: 32px; height: 32px; font-size: 12px; font-weight: bold;">
+                  {{ gallo.idGallo }}
+                </div>
+              </td>
+              <td class="fw-semibold">
+                {% if gallo.nroPlaca %}
+                  <span class="badge bg-light text-dark px-2 py-1">{{ gallo.nroPlaca }}</span>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if gallo.fechaNac %}
+                  <small class="text-muted">{{ gallo.fechaNac|date:"d/m/Y" }}</small>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-secondary">{{ gallo.color }}</span>
+              </td>
+              <td>
+                {% if gallo.sexo == 'M' %}
+                  <span class="badge bg-info">
+                    <i class="bi bi-gender-male"></i> Macho
+                  </span>
+                {% else %}
+                  <span class="badge bg-warning">
+                    <i class="bi bi-gender-female"></i> Hembra
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-primary">{{ gallo.get_tipoGallo_display }}</span>
+              </td>
+              <td>
+                {% if gallo.peso %}
+                  <strong>{{ gallo.peso }}</strong>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if gallo.nroPlacaAnterior %}
+                  <small class="text-muted">{{ gallo.nroPlacaAnterior }}</small>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if gallo.nombreDuenoAnterior %}
+                  <small>{{ gallo.nombreDuenoAnterior }}</small>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if gallo.estadoDeSalud == 'Bueno' or gallo.estadoDeSalud == 'Excelente' %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-check-circle me-1"></i>{{ gallo.estadoDeSalud }}
+                  </span>
+                {% else %}
+                  <span class="badge bg-danger">
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ gallo.estadoDeSalud }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                {% if gallo.fechaMuerte %}
+                  <small class="text-danger">
+                    <i class="bi bi-calendar-x me-1"></i>{{ gallo.fechaMuerte }}
+                  </small>
+                {% else %}
+                  <span class="text-muted">---</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if gallo.nombre_img %}
+                  <img src="{{ gallo.nombre_img.url }}" alt="Imagen" 
+                       class="rounded shadow-sm" width="40" height="40" style="object-fit: cover;">
+                {% else %}
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                       style="width: 40px; height: 40px;">
+                    <i class="bi bi-image text-muted"></i>
+                  </div>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="{% url 'ver' gallo.idGallo %}" 
+                     class="btn btn-outline-primary" title="Ver detalles">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'editar' gallo.idGallo %}" 
+                     class="btn btn-outline-warning" title="Editar">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <button type="button" class="btn btn-outline-danger"
+                      onclick="confirmarEliminacion('{{ gallo.idGallo }}')" title="Eliminar">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="13" class="text-center py-5">
+                <div class="d-flex flex-column align-items-center">
+                  <i class="bi bi-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                  <h5 class="text-muted">No hay registros disponibles</h5>
+                  <p class="text-muted mb-0">Intenta ajustar tus filtros de búsqueda</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="d-flex justify-content-center mt-4">
+    <nav aria-label="Navegación de páginas">
+      <ul class="pagination pagination-lg shadow-sm">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ page_obj.previous_page_number }}">
+              <i class="bi bi-chevron-left me-1"></i>
+              <span class="d-none d-sm-inline">Anterior</span>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">
+              <i class="bi bi-chevron-left me-1"></i>
+              <span class="d-none d-sm-inline">Anterior</span>
+            </span>
+          </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active">
+              <span class="page-link fw-bold">{{ num }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ num }}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ page_obj.next_page_number }}">
+              <span class="d-none d-sm-inline">Siguiente</span>
+              <i class="bi bi-chevron-right ms-1"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">
+              <span class="d-none d-sm-inline">Siguiente</span>
+              <i class="bi bi-chevron-right ms-1"></i>
+            </span>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Custom Styles -->
+<style>
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn {
+    transition: all 0.2s ease;
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
+  
+  .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: none;
+    color: #0d6efd;
+  }
+  
+  .page-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+  }
+  
+  @media (max-width: 991.98px) {
+    .container-fluid {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+</style>
+
+<script>
+  const columnaSelect = document.querySelector('select[name="columna"]');
+  const valorContainer = document.getElementById('valor-container');
+
+  const opciones = {
+    sexo: [
+      { value: 'M', text: 'Macho' },
+      { value: 'H', text: 'Hembra' }
+    ],
+    tipoGallo: [
+      { value: 'DP', text: 'Gallo De Pelea' },
+      { value: 'PADRE', text: 'Gallo Padre' },
+      { value: 'MADRE', text: 'Gallina madre' }
+    ]
+  };
+
+  columnaSelect.addEventListener('change', function() {
+    const selected = this.value;
+    valorContainer.innerHTML = '';
+
+    const label = document.createElement('label');
+    label.className = 'form-label fw-medium text-muted mb-2';
+    label.innerHTML = '<i class="bi bi-search me-1"></i> Valor a buscar';
+
+    valorContainer.appendChild(label);
+
+    if (opciones[selected]) {
+        const select = document.createElement('select');
+        select.name = 'valor';
+        select.className = 'form-select form-select-lg shadow-sm';
+        select.id = 'valor-select';
+        select.innerHTML = '<option value="">-- Selecciona valor --</option>' +
+            opciones[selected].map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+        valorContainer.appendChild(select);
+    } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'valor';
+        input.className = 'form-control form-control-lg shadow-sm';
+        input.placeholder = 'Ingresa el término de búsqueda...';
+        input.id = 'valor-input';
+        valorContainer.appendChild(input);
+    }
+});
+
+
+    function confirmarEliminacion(idGallo) {
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "No se podrá recuperar el registro",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = `/eliminar/${idGallo}`;
+        }
+      });
+    }
+</script>
+{% endblock %}

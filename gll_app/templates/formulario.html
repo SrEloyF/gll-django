@@ -122,6 +122,25 @@
           </div>
 
           <div class="col-12 col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.nombreDuenoAnterior }}
+              <label for="{{ form.nombreDuenoAnterior.id_for_label }}">Nombre del Dueño Anterior</label>
+              {% if form.nombreDuenoAnterior.errors %}
+                <div class="invalid-feedback d-block">{{ form.nombreDuenoAnterior.errors }}</div>
+              {% endif %}
+
+              <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <div class="input-group-text">
+                  <i class="bi bi-person-fill text-primary"></i>
+                </div>
+                <button class="btn btn-success ms-2" id="btnAniadirDuenoAnterior" type="button">
+                  <i class="bi bi-plus text-white"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
             <div class="form-floating position-relative mb-3">
               {{ form.estadoDeSalud }}
               <label for="{{ form.estadoDeSalud.id_for_label }}">Estado de Salud <span class="text-danger">*</span></label>

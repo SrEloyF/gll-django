@@ -102,7 +102,13 @@
                         <th class="ps-3">
                           <i class="bi bi-speedometer2 me-2"></i>Peso (libras)
                         </th>
-                        <td>{{ gallo.peso }}</td>
+                        <td>
+                          {% if gallo.peso %}
+                            {{ gallo.peso }}
+                          {% else %}
+                            Peso no establecido
+                          {% endif %}
+                        </td>
                       </tr>
 
                       <tr>

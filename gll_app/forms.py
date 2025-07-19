@@ -57,7 +57,7 @@ class GalloForm(forms.ModelForm):
     peso = forms.ModelChoiceField(
         queryset=PesosCheck.objects.all(),
         widget=forms.Select(attrs={'class': 'form-select'}),
-        required=True,
+        required=False,
         label="Peso (libras)"
     )
     def __init__(self, *args, **kwargs):

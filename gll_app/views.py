@@ -12,7 +12,41 @@ from django.urls import reverse
 from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 
+def filtros(request):
+    columna = request.GET.get('columna', '')
+    valor = request.GET.get('valor', '')
+    page = request.GET.get('page', 1)
+
+    queryset = Gallo.objects.all()
+
+    # Diccionario para mapear columna a filtro
+    filtros_map = {
+        'nroPlaca': 'nroPlaca__nroPlaca__icontains',
+        'fechaNac': 'fechaNac__icontains',
+        'color': 'color__nombre__icontains',
+        'sexo': 'sexo__icontains',
+        'tipoGallo': 'tipoGallo__icontains',
+        'peso': 'peso__peso__icontains',
+        'nroPlacaAnterior': 'nroPlacaAnterior__nroPlaca__icontains',
+        'nombreDuenoAnterior': 'nombreDuenoAnterior__nombre__icontains',
+        'estadoDeSalud': 'estadoDeSalud__nombre__icontains',
+        'fechaMuerte': 'fechaMuerte__icontains',
+    }
+
+    if columna and valor and columna in filtros_map:
+        filtro = {filtros_map[columna]: valor}
+        queryset = queryset.filter(**filtro)
+
+    paginator = Paginator(queryset, 10)
+    page_obj = paginator.get_page(page)
+
+    return render(request, 'filtros.html', {
+        'page_obj': page_obj,
+        'columna': columna,
+        'valor': valor,
+    })
 
 @csrf_exempt
 def peso_create_ajax(request):

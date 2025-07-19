@@ -52,4 +52,6 @@ urlpatterns = [
 
     path('placa/nuevo/ajax/', views.placa_create_ajax, name='placa_create_ajax'),
     path('peso/nuevo/ajax/', views.peso_create_ajax, name='peso_create_ajax'),
+
+    path('filtros/', views.filtros, name='filtros_gallos'),
 ]

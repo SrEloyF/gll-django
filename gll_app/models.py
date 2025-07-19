@@ -82,7 +82,7 @@ class Gallo(models.Model):
         ('MADRE', 'Gallina madre')
     ])
 
-    peso = models.ForeignKey(PesosCheck, on_delete=models.PROTECT)
+    peso = models.ForeignKey(PesosCheck, on_delete=models.PROTECT, null=True)
     nroPlacaAnterior = models.ForeignKey(PlacaCheck, null=True, blank=False, on_delete=models.PROTECT, related_name='gallo_por_placa_anterior')
     nombreDuenoAnterior = models.ForeignKey(DuenoAnterior, on_delete=models.PROTECT, null=True)
     estadoDeSalud = models.ForeignKey(Estado, on_delete=models.PROTECT)
@@ -94,7 +94,7 @@ class Gallo(models.Model):
     placaMadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_madre')
 
     def __str__(self):
-        return f"Gallo {self.nroPlaca}"
+        return f"Gallo {self.nroPlaca if self.nroPlaca is not None else 'S.P.'}"
 
 class Encuentro(models.Model):
     idEncuentro = models.AutoField(primary_key=True)
