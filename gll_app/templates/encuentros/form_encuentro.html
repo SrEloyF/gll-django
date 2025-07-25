@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Registrar Encuentro{% endblock %}
+{% block title %}
+  {% if encuentro %}
+    Editar encuentro #{{ encuentro.idEncuentro }}
+  {% else %}
+    Registrar Encuentro
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container py-2 py-md-4">

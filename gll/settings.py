@@ -92,6 +92,8 @@ DATABASES = {
     }
 }
 
+IMAGEKIT_PRIVATE_KEY = os.getenv('KEY_IMG')
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

@@ -10,7 +10,6 @@ class GalloForm(forms.ModelForm):
             'nroPlaca': forms.TextInput(attrs={'class': 'form-control'}),
             'sexo': forms.Select(attrs={'class': 'form-select'}),
             'tipoGallo': forms.Select(attrs={'class': 'form-select'}),
-            'nombre_img': forms.FileInput(attrs={'class': 'form-control'}),
             'peso': forms.NumberInput(attrs={'class': 'form-control'}),
             'nroPlacaAnterior': forms.NumberInput(attrs={'class': 'form-control'}),
             'nombreDuenoAnterior': forms.Select(attrs={'class': 'form-control'}),
@@ -24,6 +23,14 @@ class GalloForm(forms.ModelForm):
             ),
             'color': forms.Select(attrs={'class': 'form-control'}),
         }
+
+    nombre_img = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*'
+        })
+    )
 
     fechaNac = forms.DateField(
         required=False,
@@ -65,8 +72,20 @@ class GalloForm(forms.ModelForm):
         hoy = date.today().strftime('%Y-%m-%d')
         self.fields['fechaNac'].widget.attrs['max'] = hoy
         self.fields['fechaMuerte'].required = False
+        if self.instance and self.instance.pk:
+            self.fields['nombre_img'].required = False
 
 class EncuentroForm(forms.ModelForm):
+    
+    video = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'accept': 'video/*'})
+    )
+    imagen_evento = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*'})
+    )
+
     class Meta:
         model = Encuentro
         fields = [
@@ -80,10 +99,7 @@ class EncuentroForm(forms.ModelForm):
                 attrs={'type': 'date'},
                 format='%Y-%m-%d'
             ),
-            'video': forms.ClearableFileInput(attrs={'accept': 'video/*'}),
             'resultado': forms.Select(attrs={'class': 'form-select'}),
-            #'duenoEvento': forms.Select(attrs={'class': 'form-select'}),
-            'imagen_evento': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -109,6 +125,28 @@ class EncuentroForm(forms.ModelForm):
             cleaned_data['porcentaje_premio_mayor'] = 0
 
         return cleaned_data
+    
+    def clean_video(self):
+        """
+        Si estamos editando y ya existía un archivo de vídeo,
+        y el usuario no sube uno nuevo, devolvemos el previo.
+        En creación, si no envía vídeo, dejamos None.
+        """
+        nuevo = self.cleaned_data.get('video')
+        if self.instance and self.instance.pk and self.instance.video:
+            if not nuevo:
+                return self.instance.video
+        return nuevo
+
+    def clean_imagen_evento(self):
+        """
+        Igual que clean_video, pero para la imagen.
+        """
+        nueva = self.cleaned_data.get('imagen_evento')
+        if self.instance and self.instance.pk and self.instance.imagen_evento:
+            if not nueva:
+                return self.instance.imagen_evento
+        return nueva
         
         
 class ColorForm(forms.ModelForm):

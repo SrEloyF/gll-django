@@ -113,7 +113,7 @@
               </div>
             </div>
             {% if gallo.nombre_img %}
-            <img src="{{ gallo.nombre_img.url }}" alt="Imagen" class="rounded" width="50" height="50" style="object-fit: cover;">
+            <img src="{{ gallo.nombre_img }}" alt="Imagen" class="rounded" width="50" height="50" style="object-fit: cover;">
             {% endif %}
           </div>
           
@@ -295,7 +295,7 @@
               </td>
               <td class="text-center">
                 {% if gallo.nombre_img %}
-                  <img src="{{ gallo.nombre_img.url }}" alt="Imagen" 
+                  <img src="{{ gallo.nombre_img }}" alt="gallo{{ gallo.idGallo }}" 
                        class="rounded shadow-sm" width="40" height="40" style="object-fit: cover;">
                 {% else %}
                   <div class="bg-light rounded d-flex align-items-center justify-content-center" 

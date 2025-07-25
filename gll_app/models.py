@@ -2,7 +2,85 @@ from django.db import models
 import time
 import os
 from django.core.validators import MinValueValidator
+import requests
+from django.conf import settings
+from django.core.files.base import ContentFile
+import base64
+import time
 
+class ImageKitField(models.CharField):
+    def __init__(self, folder=None, *args, **kwargs):
+        self.folder = folder
+        kwargs['max_length'] = 500
+        super().__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        file = getattr(model_instance, self.attname)
+        print(f"DEBUG - Pre save called for {self.attname}")
+        print(f"DEBUG - File type: {type(file)}")
+        print(f"DEBUG - File value: {file}")
+
+        if not file:
+            return file
+
+        # Si es una URL de ImageKit, no procesar
+        if isinstance(file, str) and file.startswith('http'):
+            return file
+
+        # Si es un string pero no es URL, probablemente sea un archivo nuevo
+        if isinstance(file, str):
+            # Buscar el archivo en request.FILES
+            file_obj = model_instance._request.FILES.get(self.attname)
+            if file_obj:
+                file = file_obj
+
+        # Procesar el archivo
+        if hasattr(file, 'read'):
+            try:
+                timestamp = int(time.time())
+                filename = f"{timestamp}_{file.name}"
+                
+                files = {
+                    'file': (filename, file, file.content_type)
+                }
+                
+                data = {
+                    'fileName': filename,
+                    'folder': self.folder
+                }
+
+                auth = base64.b64encode(f"{settings.IMAGEKIT_PRIVATE_KEY}:".encode()).decode()
+                headers = {
+                    'Authorization': f'Basic {auth}'
+                }
+
+                print(f"DEBUG - Making request to ImageKit")
+                print(f"DEBUG - Headers: {headers}")
+                print(f"DEBUG - Data: {data}")
+
+                response = requests.post(
+                    'https://api.imagekit.io/v1/files/upload',
+                    files=files,
+                    data=data,
+                    headers=headers
+                )
+
+                print(f"DEBUG - Response status: {response.status_code}")
+                print(f"DEBUG - Response body: {response.text}")
+
+                if response.status_code == 200:
+                    result = response.json()
+                    url = result['url']
+                    return url
+                else:
+                    raise Exception(f"Failed to upload to ImageKit: {response.text}")
+            except Exception as e:
+                print(f"DEBUG - Exception occurred: {str(e)}")
+                raise
+
+        return file
+
+"""
 def imagen_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{int(time.time())}.{ext}"
@@ -12,6 +90,7 @@ def imagen_upload_path_encuentros(instance, filename):
     base, ext = os.path.splitext(filename)
     timestamp = int(time.time())
     return f"encuentros/{timestamp}_{base}{ext}"
+"""
 
 class Color(models.Model):
     def save(self, *args, **kwargs):
@@ -79,7 +158,7 @@ class Gallo(models.Model):
     tipoGallo = models.CharField(max_length=20, choices=[
         ('DP', 'Gallo De Pelea'),
         ('PADRE', 'Gallo Padre'),
-        ('MADRE', 'Gallina madre')
+        ('MADRE', 'Gallina Madre')
     ])
 
     peso = models.ForeignKey(PesosCheck, on_delete=models.PROTECT, null=True)
@@ -89,7 +168,7 @@ class Gallo(models.Model):
     fechaMuerte = models.DateField(null=True, blank=False)
 
     #observaciones = models.TextField()
-    nombre_img = models.ImageField(upload_to=imagen_upload_path)
+    nombre_img = ImageKitField(folder='gll/gallos')
     placaPadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_padre')
     placaMadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_madre')
 
@@ -107,10 +186,10 @@ class Encuentro(models.Model):
         ('T', 'Tablas'),
         ('D', 'Derrota')
     ], default='V')
-    video = models.FileField(upload_to=imagen_upload_path, null=True)
+    video = ImageKitField(folder='gll/encuentros', null=True)
     condicionGallo = models.ForeignKey(Estado, on_delete=models.PROTECT)
     #duenoEvento = models.ForeignKey(Dueno, on_delete=models.PROTECT)
-    imagen_evento = models.ImageField(upload_to=imagen_upload_path_encuentros, null=True)
+    imagen_evento = ImageKitField(folder='gll/encuentros', null=True)
 
     # gastos fijos
     pactada = models.DecimalField(decimal_places=2, default=0, max_digits=10, validators=[MinValueValidator(0)])

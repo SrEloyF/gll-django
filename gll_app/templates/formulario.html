@@ -1,12 +1,29 @@
 {% extends "base.html" %}
-{% block title %}{% if form.instance.pk %}Editar{% else %}Crear{% endif %} Gallo{% endblock %}
+{% block title %}
+  {% if form.instance.pk %}
+  Editar
+  {% else %}
+  Crear
+  {% endif %}
+   Gallo
+{% endblock %}
 
 {% block content %}
 <div class="container py-2 py-md-4">
   <div class="card shadow-sm">
-    <div class="card-header bg-primary bg-gradient text-white">
-      <h2 class="mb-0 fs-4 fs-md-3">{% if form.instance.pk %}Editar{% else %}Registrar{% endif %} Gallo</h2>
+    <div class="card-header bg-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <h2 class="mb-2 mb-md-0 d-flex align-items-center fs-4 fs-md-3">
+        <i class="bi bi-calendar-event me-2"></i>
+        {% if form.instance.pk %}Editar{% else %}Registrar{% endif %} Gallo
+      </h2>
+
+      {% if form.instance.pk %}
+        <a class="btn btn-warning mt-2 mt-md-0" href="{% url 'ver' idGallo=form.instance.pk %}">
+          Ver gallo
+        </a>
+      {% endif %}
     </div>
+
     <div class="card-body">
       <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
@@ -169,17 +186,34 @@
               {% endif %}
             </div>
           </div>
+        
+        </div>
 
-          <div class="col-12 mb-3">
-            <label for="{{ form.nombre_img.id_for_label }}" class="form-label">Imagen <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-camera-fill"></i></span>
-              {{ form.nombre_img }}
-            </div>
-            {% if form.nombre_img.errors %}
-            <div class="invalid-feedback d-block">{{ form.nombre_img.errors }}</div>
+        <div class="col-12 mb-3">
+          <label for="{{ form.nombre_img.id_for_label }}" class="form-label">Imagen <span class="text-danger">*</span></label>
+        
+          <!-- Mostrar imagen existente si estamos editando -->
+          {% if form.instance.nombre_img %}
+          <div class="mb-3">
+            <img src="{{ form.instance.nombre_img }}" class="img-fluid img-thumbnail" alt="Imagen actual del gallo"
+              style="max-height: 200px;">
+            <p class="form-text mt-1">Imagen actual. Seleccione una nueva imagen para reemplazarla.</p>
+          </div>
+          {% endif %}
+        
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-camera-fill"></i></span>
+            {{ form.nombre_img }}
+          </div>
+          {% if form.nombre_img.errors %}
+          <div class="invalid-feedback d-block">{{ form.nombre_img.errors }}</div>
+          {% endif %}
+          <div class="form-text">
+            {% if form.instance.nombre_img %}
+            Seleccione una nueva imagen para reemplazar la actual.
+            {% else %}
+            Seleccione una imagen del ave para su registro.
             {% endif %}
-            <div class="form-text">Seleccione una imagen del ave para su registro.</div>
           </div>
         </div>
 

@@ -25,7 +25,7 @@
         <div class="col-lg-4 text-center">
           <div class="position-relative mb-3">
             {% if gallo.nombre_img %}
-              <img src="{{ gallo.nombre_img.url }}" class="img-fluid rounded shadow-sm" alt="Imagen del gallo {{ gallo.nroPlaca }}">
+              <img src="{{ gallo.nombre_img }}" class="img-fluid rounded shadow-sm" alt="Imagen del gallo {{ gallo.nroPlaca }}">
               <div class="position-absolute bottom-0 end-0">
                 <span class="badge rounded-pill bg-dark p-2">
                   <i class="bi bi-camera-fill me-1"></i>Foto
@@ -93,7 +93,7 @@
                           {% if gallo.fechaNac %}
                             {{ gallo.fechaNac|date:"d/m/Y" }}
                           {% else %}
-                            Fecha Nac. no establecida
+                            <span class="text-muted fst-italic">Fecha Nac. no establecida</span>
                           {% endif %}
                         </td>
                       </tr>
@@ -106,7 +106,7 @@
                           {% if gallo.peso %}
                             {{ gallo.peso }}
                           {% else %}
-                            Peso no establecido
+                            <span class="text-muted fst-italic">Peso no establecido</span>
                           {% endif %}
                         </td>
                       </tr>
@@ -194,7 +194,7 @@
                       {% if gallo.fechaNac %}
                       {{ gallo.fechaNac|date:"d/m/Y" }}
                       {% else %}
-                      Fecha Nac. no establecida
+                      <span class="text-muted fst-italic">Fecha Nac. no establecida</span>
                       {% endif %}
                     </div>
                   </div>

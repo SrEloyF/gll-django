@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Ver Encuentro{% endblock %}
+{% block title %}
+  Ver Encuentro #{{ encuentro.pk }}
+{% endblock %}
 
 {% block content %}
 <div class="container py-4">
 
-  <div class="row mt-3">
+  <div class="row">
     <div class="col-md-8">
       <!-- Información del Encuentro -->
       <div class="card shadow-sm mb-4">
@@ -52,10 +54,6 @@
                   <span>{{ encuentro.condicionGallo }}</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                  <div><i class="bi bi-award me-2 text-primary"></i><strong>Dueño del evento:</strong></div>
-                  <span>{{ encuentro.duenoEvento }}</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                   <div><i class="bi bi-flag me-2 text-primary"></i><strong>Resultado:</strong></div>
                   <span class="badge {% if encuentro.resultado == 'V' %}bg-success{% elif encuentro.resultado == 'T' %}bg-warning text-dark{% else %}bg-danger{% endif %} p-2">
                     {{ encuentro.get_resultado_display }}
@@ -91,7 +89,7 @@
           {% if encuentro.video %}
             <div class="ratio ratio-16x9 mb-3">
               <video controls class="rounded shadow-sm">
-                <source src="{{ encuentro.video.url }}" type="video/mp4">
+                <source src="{{ encuentro.video }}" type="video/mp4">
                 Su navegador no soporta la reproducción de video.
               </video>
             </div>
@@ -99,7 +97,7 @@
               <span class="text-muted small">
                 <i class="bi bi-info-circle me-1"></i>Video del encuentro
               </span>
-              <a href="{{ encuentro.video.url }}" download class="btn btn-sm btn-outline-primary">
+              <a href="{{ encuentro.video }}" download class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-download me-1"></i>Descargar video
               </a>
             </div>
@@ -116,13 +114,13 @@
         <div class="tab-pane fade" id="imagen-content" role="tabpanel" aria-labelledby="imagen-tab">
           {% if encuentro.imagen_evento %}
             <div class="text-center mb-3">
-              <img src="{{ encuentro.imagen_evento.url }}" alt="Imagen del Encuentro" class="img-fluid rounded shadow-sm mb-2" style="max-height: 400px;">
+              <img src="{{ encuentro.imagen_evento }}" alt="Imagen del Encuentro" class="img-fluid rounded shadow-sm mb-2" style="max-height: 400px;">
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="text-muted small">
                 <i class="bi bi-info-circle me-1"></i>Imagen principal del evento
               </span>
-              <a href="{{ encuentro.imagen_evento.url }}" download class="btn btn-sm btn-outline-primary">
+              <a href="{{ encuentro.imagen_evento }}" download class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-download me-1"></i>Descargar imagen
               </a>
             </div>

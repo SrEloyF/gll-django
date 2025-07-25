@@ -77,7 +77,7 @@ def placa_create_ajax(request):
         return JsonResponse({'success': True, 'id': placa.nroPlaca, 'nroPlaca': placa.nroPlaca})
     return JsonResponse({'error': 'Método no permitido.'}, status=405)
 
-paginas = 2
+paginas = 10
 
 def export_db(request):
     db_settings = settings.DATABASES['default']
@@ -200,17 +200,23 @@ def crear(request):
     if request.method == 'POST':
         form = GalloForm(request.POST, request.FILES)
         if form.is_valid():
-            gallo = form.save(commit=False)
-            placa_padre = request.POST.get('placaPadre') or None
-            placa_madre = request.POST.get('placaMadre') or None
+            try:
+                gallo = form.save(commit=False)
+                gallo._request = request
+                placa_padre = request.POST.get('placaPadre') or None
+                placa_madre = request.POST.get('placaMadre') or None
 
-            if placa_padre:
-                gallo.placaPadre_id = placa_padre  # si es FK
-            if placa_madre:
-                gallo.placaMadre_id = placa_madre
+                if placa_padre:
+                    gallo.placaPadre_id = placa_padre  # si es FK
+                if placa_madre:
+                    gallo.placaMadre_id = placa_madre
 
-            gallo.save()
-            return redirect('ver', idGallo=gallo.idGallo)
+                gallo.save()
+                return redirect('ver', idGallo=gallo.idGallo)
+
+            except Exception as e:
+                print("DEBUG - Error saving:", str(e))  # Debug line
+                raise
         else:
             print(form.errors)
 
@@ -235,6 +241,7 @@ def editar(request, idGallo):
                 messages.error(request, "Padre y madre no pueden ser el mismo.")
             else:
                 gallo = form.save(commit=False)
+                gallo._request = request
                 gallo.placaPadre_id = placa_padre
                 gallo.placaMadre_id = placa_madre
                 gallo.save()
@@ -284,6 +291,7 @@ def crear_encuentro(request):
 
             if form.is_valid() and gallo:
                 encuentro = form.save(commit=False)
+                encuentro._request = request
                 encuentro.gallo = gallo
                 encuentro.save()
                 return redirect('ver_encuentro', pk=encuentro.idEncuentro)
@@ -368,9 +376,6 @@ def ver_encuentro(request, pk):
     else:
         raise Exception("Resultado no contemplado: " + resultado)
 
-
-    print(pago_juez)
-
     # Pasar todos los datos al template
     return render(
         request, 'encuentros/ver_encuentro.html', 
@@ -423,9 +428,14 @@ def encuentro_form(request, pk=None):
             if form.is_valid() and gallo:
                 encuentro = form.save(commit=False)
                 encuentro.gallo = gallo
-                print("Antes de save():", encuentro.video, encuentro.imagen_evento)
+                encuentro._request = request
+                print("Antes de save():")
+                print("video: ", encuentro.video or "No video")
+                print("imagen_evento: " , encuentro.imagen_evento)
                 encuentro.save()
-                print("Después de save():", encuentro.video, encuentro.imagen_evento)
+                print("Después de save():")
+                print("video: ", encuentro.video or "No video")
+                print("imagen_evento: " , encuentro.imagen_evento)
                 return redirect('ver_encuentro', pk=encuentro.idEncuentro)
             else:
                 print("Errores en el form:", form.errors.as_json()) 
