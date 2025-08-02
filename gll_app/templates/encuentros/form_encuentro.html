@@ -86,6 +86,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-house text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_galpon1', 'Buscar Galpón', 'Galpón')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirGalpon1" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -102,6 +105,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-house text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_galpon2', 'Buscar Galpón', 'Galpón')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirGalpon2" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -193,6 +199,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-bandaid text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_condicionGallo', 'Buscar Estado de Salud', 'Estado')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirEstado" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -414,14 +423,26 @@
                 <th><i class="bi bi-tag me-1"></i>Placa</th>
                 <th><i class="bi bi-palette me-1"></i>Color</th>
                 <th><i class="bi bi-gender-ambiguous me-1"></i>Sexo</th>
+                <th><i class="bi bi-image me-1"></i>Imagen</th>
               </tr>
             </thead>
             <tbody>
               {% for gallo in gallos %}
               <tr class="gallo-row" data-placa="{{ gallo.nroPlaca }}" data-idgallo="{{ gallo.idGallo }}">
-                <td>{{ gallo.nroPlaca }}</td>
+                {% if gallo.nroPlaca %}
+                  <td>{{ gallo.nroPlaca }}</td>
+                {% else %}
+                  <td>-</td>
+                {% endif %}
                 <td>{{ gallo.color }}</td>
                 <td>{{ gallo.get_sexo_display }}</td>
+                {% if gallo.nombre_img %}
+                  <td>
+                    <img src="{{ gallo.nombre_img }}" alt="img{{gallo.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;">
+                  </td>
+                {% else %}
+                  <td></td>
+                {% endif %}
               </tr>
               {% endfor %}
             </tbody>
@@ -435,6 +456,35 @@
         <button type="button" class="btn btn-primary" id="confirmarGallo" disabled>
           <i class="bi bi-check-circle me-1"></i>Confirmar Selección
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de búsqueda reutilizable -->
+<div class="modal fade" id="modalBuscarSelect" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalBuscarSelectTitle"></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-3" id="buscarSelectInput" placeholder="Buscar...">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th id="modalBuscarSelectCol"></th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="modalBuscarSelectBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -644,6 +694,57 @@ function añadirGalpon(selectId) {
       }
     });
   });
+
+  function abrirModalBuscarSelect(selectId, titulo, columna) {
+    const select = document.getElementById(selectId);
+    const modal = new bootstrap.Modal(document.getElementById('modalBuscarSelect'));
+    const modalTitle = document.getElementById('modalBuscarSelectTitle');
+    const modalCol = document.getElementById('modalBuscarSelectCol');
+    const modalBody = document.getElementById('modalBuscarSelectBody');
+    const buscarInput = document.getElementById('buscarSelectInput');
+
+    modalTitle.textContent = titulo;
+    modalCol.textContent = columna;
+    buscarInput.value = '';
+
+    // Poblar la tabla con las opciones del select
+    modalBody.innerHTML = '';
+    Array.from(select.options).forEach(option => {
+      if (option.value) { // Evita opciones vacías
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${option.text}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-success btn-sm seleccionar-opcion-modal" data-value="${option.value}" data-bs-dismiss="modal">
+              <i class="bi bi-check-circle"></i> Seleccionar
+            </button>
+          </td>
+        `;
+        modalBody.appendChild(tr);
+      }
+    });
+
+    // Búsqueda
+    buscarInput.oninput = function () {
+      const searchTerm = buscarInput.value.toLowerCase();
+      Array.from(modalBody.children).forEach(row => {
+        const text = row.querySelector('td').textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    };
+
+    // Selección
+    modalBody.onclick = function (e) {
+      if (e.target.closest('.seleccionar-opcion-modal')) {
+        const value = e.target.closest('.seleccionar-opcion-modal').dataset.value;
+        select.value = value;
+        // Opcional: disparar change si necesitas lógica extra
+        select.dispatchEvent(new Event('change'));
+      }
+    };
+
+    modal.show();
+  }
 
 
   function calcular(pactada, apuestaGeneral, pagoJuez, apuestaPorFuera, totalPollon, porcentajePollon, resultado, resultadoTextual) {

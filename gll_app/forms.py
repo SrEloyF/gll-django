@@ -25,7 +25,7 @@ class GalloForm(forms.ModelForm):
         }
 
     nombre_img = forms.ImageField(
-        required=False,
+        required=True,
         widget=forms.FileInput(attrs={
             'class': 'form-control',
             'accept': 'image/*'

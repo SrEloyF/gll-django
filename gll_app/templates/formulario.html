@@ -81,6 +81,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-palette text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_color', 'Buscar Color', 'Color')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirColor" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -116,6 +119,9 @@
               <div class="invalid-feedback d-block">{{ form.peso.errors }}</div>
               {% endif %}
               <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_peso', 'Buscar Peso', 'Peso')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirPeso" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -131,6 +137,9 @@
               <div class="invalid-feedback d-block">{{ form.nroPlacaAnterior.errors }}</div>
               {% endif %}
               <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_nroPlacaAnterior', 'Buscar Placa Anterior', 'Placa')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirPlacaAnterior" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -150,6 +159,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-person-fill text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_nombreDuenoAnterior', 'Buscar Dueño Anterior', 'Nombre')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirDuenoAnterior" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -170,6 +182,9 @@
                 <div class="input-group-text">
                   <i class="bi bi-bandaid text-primary"></i>
                 </div>
+                <button type="button" class="btn btn-success ms-2" onclick="abrirModalBuscarSelect('id_estadoDeSalud', 'Buscar Estado de Salud', 'Estado')">
+                  <i class="bi bi-search text-white"></i>
+                </button>
                 <button class="btn btn-success ms-2" id="btnAniadirEstado" type="button">
                   <i class="bi bi-plus text-white"></i>
                 </button>
@@ -304,12 +319,18 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+
+        <div class="mb-3">
+          <input type="text" class="form-control" id="buscarPlacaPadre" placeholder="Buscar por placa...">
+        </div>
+
         <div class="table-responsive">
           <table class="table table-hover table-striped">
             <thead class="table-light">
               <tr>
-                <th>Placa</th>
-                <th>Color</th>
+                <th><i class="bi bi-tag me-1"></i>Placa</th>
+                <th><i class="bi bi-palette me-1"></i>Color</th>
+                <th><i class="bi bi-image me-1"></i>Imagen</th>
                 <th class="text-end">Acción</th>
               </tr>
             </thead>
@@ -319,6 +340,13 @@
               <tr>
                 <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
                 <td>{{ g.color }}</td>
+                {% if g.nombre_img %}
+                  <td>
+                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;">
+                  </td>
+                {% else %}
+                  <td></td>
+                {% endif %}
                 <td class="text-end">
                   <button type="button" class="btn btn-sm btn-success seleccionar-padre" data-placa="{{ g.nroPlaca }}"
                     data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
@@ -354,12 +382,18 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+
+        <div class="mb-3">
+          <input type="text" class="form-control" id="buscarPlacaMadre" placeholder="Buscar por placa...">
+        </div>
+
         <div class="table-responsive">
           <table class="table table-hover table-striped">
             <thead class="table-light">
               <tr>
-                <th>Placa</th>
-                <th>Color</th>
+                <th><i class="bi bi-tag me-1"></i>Placa</th>
+                <th><i class="bi bi-palette me-1"></i>Color</th>
+                <th><i class="bi bi-image me-1"></i>Imagen</th>
                 <th class="text-end">Acción</th>
               </tr>
             </thead>
@@ -369,6 +403,13 @@
               <tr>
                 <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
                 <td>{{ g.color }}</td>
+                {% if g.nombre_img %}
+                  <td>
+                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;">
+                  </td>
+                {% else %}
+                  <td></td>
+                {% endif %}
                 <td class="text-end">
                   <button type="button" class="btn btn-sm btn-danger seleccionar-madre" data-placa="{{ g.nroPlaca }}"
                     data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
@@ -385,6 +426,35 @@
               </tr>
               {% endfor %}
             </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- modal para los selects -->
+<div class="modal fade" id="modalBuscarSelect" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalBuscarSelectTitle"></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control mb-3" id="buscarSelectInput" placeholder="Buscar...">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th id="modalBuscarSelectCol"></th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="modalBuscarSelectBody"></tbody>
           </table>
         </div>
       </div>
@@ -663,15 +733,33 @@
             .then(response => response.json())
             .then(data => {
               if (data.success) {
-                // Añadir la opción en ambos selects
-                ['id_nroPlaca', 'id_nroPlacaAnterior'].forEach(function (selectName) {
+                // Añadir la opción ordenada en ambos selects
+                ['id_nroPlaca', 'id_nroPlacaAnterior'].forEach(function(selectName) {
                   const select = document.getElementById(selectName);
                   if (select) {
+                    const options = Array.from(select.options);
                     const nuevaOpcion = document.createElement('option');
                     nuevaOpcion.value = data.id;
                     nuevaOpcion.textContent = data.nroPlaca;
-                    select.appendChild(nuevaOpcion);
-                    // Selecciona solo el select que disparó el evento
+                    
+                    // Encontrar la posición correcta para insertar (orden ascendente)
+                    let insertIndex = options.length;
+                    for (let i = 0; i < options.length; i++) {
+                      const optionValue = parseInt(options[i].textContent);
+                      if (nroPlaca < optionValue) {
+                        insertIndex = i;
+                        break;
+                      }
+                    }
+                    
+                    // Insertar en la posición correcta
+                    if (insertIndex === options.length) {
+                      select.appendChild(nuevaOpcion);
+                    } else {
+                      select.insertBefore(nuevaOpcion, select.options[insertIndex]);
+                    }
+                    
+                    // Seleccionar solo en el select que disparó el evento
                     if (selectName === selectId) {
                       nuevaOpcion.selected = true;
                     }
@@ -733,10 +821,28 @@
               .then(data => {
                 if (data.success) {
                   const selectPeso = document.getElementById(selectId);
+                  const options = Array.from(selectPeso.options);
                   const nuevaOpcionPeso = document.createElement('option');
                   nuevaOpcionPeso.value = data.id;
                   nuevaOpcionPeso.textContent = data.peso;
-                  selectPeso.appendChild(nuevaOpcionPeso);
+
+                  // Encontrar la posición correcta para insertar
+                  let insertIndex = options.length;
+                  for (let i = 0; i < options.length; i++) {
+                    const optionValue = parseFloat(options[i].textContent);
+                    if (peso < optionValue) {
+                      insertIndex = i;
+                      break;
+                    }
+                  }
+                  
+                  // Insertar la nueva opción en la posición correcta
+                  if (insertIndex === options.length) {
+                    selectPeso.appendChild(nuevaOpcionPeso);
+                  } else {
+                    selectPeso.insertBefore(nuevaOpcionPeso, selectPeso.options[insertIndex]);
+                  }
+                  
                   nuevaOpcionPeso.selected = true;
                   Swal.fire('¡Éxito!', 'Peso registrado correctamente.', 'success');
                 } else {
@@ -775,6 +881,85 @@
     });
 
   });
+
+  // Búsqueda en el modal de Padre
+  document.getElementById('buscarPlacaPadre').addEventListener('input', function (e) {
+    const searchTerm = e.target.value.toLowerCase();
+    document.querySelectorAll('#modalPadre table tbody tr').forEach(row => {
+      const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+      row.style.display = placa.includes(searchTerm) ? '' : 'none';
+    });
+  });
+
+  // Búsqueda en el modal de Madre
+  document.getElementById('buscarPlacaMadre').addEventListener('input', function (e) {
+    const searchTerm = e.target.value.toLowerCase();
+    document.querySelectorAll('#modalMadre table tbody tr').forEach(row => {
+      const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+      row.style.display = placa.includes(searchTerm) ? '' : 'none';
+    });
+  });
+
+  // Opcional: limpiar búsqueda al abrir cada modal
+  document.getElementById('modalPadre').addEventListener('show.bs.modal', function () {
+    document.getElementById('buscarPlacaMadre').value = '';
+    document.querySelectorAll('#modalPadre table tbody tr').forEach(row => row.style.display = '');
+  });
+  document.getElementById('modalMadre').addEventListener('show.bs.modal', function () {
+    document.getElementById('buscarPlacaMadre').value = '';
+    document.querySelectorAll('#modalMadre table tbody tr').forEach(row => row.style.display = '');
+  });
+
+  function abrirModalBuscarSelect(selectId, titulo, columna) {
+    const select = document.getElementById(selectId);
+    const modal = new bootstrap.Modal(document.getElementById('modalBuscarSelect'));
+    const modalTitle = document.getElementById('modalBuscarSelectTitle');
+    const modalCol = document.getElementById('modalBuscarSelectCol');
+    const modalBody = document.getElementById('modalBuscarSelectBody');
+    const buscarInput = document.getElementById('buscarSelectInput');
+
+    modalTitle.textContent = titulo;
+    modalCol.textContent = columna;
+    buscarInput.value = '';
+
+    // Poblar la tabla con las opciones del select
+    modalBody.innerHTML = '';
+    Array.from(select.options).forEach(option => {
+      if (option.value) { // Evita opciones vacías
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${option.text}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-success btn-sm seleccionar-opcion-modal" data-value="${option.value}" data-bs-dismiss="modal">
+              <i class="bi bi-check-circle"></i> Seleccionar
+            </button>
+          </td>
+        `;
+        modalBody.appendChild(tr);
+      }
+    });
+
+    // Búsqueda
+    buscarInput.oninput = function () {
+      const searchTerm = buscarInput.value.toLowerCase();
+      Array.from(modalBody.children).forEach(row => {
+        const text = row.querySelector('td').textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    };
+
+    // Selección
+    modalBody.onclick = function (e) {
+      if (e.target.closest('.seleccionar-opcion-modal')) {
+        const value = e.target.closest('.seleccionar-opcion-modal').dataset.value;
+        select.value = value;
+        // Opcional: disparar change si necesitas lógica extra
+        select.dispatchEvent(new Event('change'));
+      }
+    };
+
+    modal.show();
+  }
 
   // Quitar Padre
   document.getElementById('quitarPadre')?.addEventListener('click', () => {

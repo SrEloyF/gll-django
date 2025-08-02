@@ -222,7 +222,19 @@ def crear(request):
 
     else:
         form = GalloForm()
-    return render(request, 'formulario.html', {'form': form, 'gallos': Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca if form.instance else None)})
+
+    if form.instance and form.instance.nroPlaca:
+        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca)
+    else:
+        gallos = Gallo.objects.all()
+
+    return render(
+        request, 'formulario.html', 
+        {
+            'form': form, 
+            'gallos': gallos
+            }
+        )
 
 def ajax_valida_placa(request):
     placa = request.GET.get('placa', None)
