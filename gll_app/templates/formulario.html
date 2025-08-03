@@ -911,6 +911,7 @@
   });
 
   function abrirModalBuscarSelect(selectId, titulo, columna) {
+    const filas = 8;
     const select = document.getElementById(selectId);
     const modal = new bootstrap.Modal(document.getElementById('modalBuscarSelect'));
     const modalTitle = document.getElementById('modalBuscarSelectTitle');
@@ -922,30 +923,76 @@
     modalCol.textContent = columna;
     buscarInput.value = '';
 
-    // Poblar la tabla con las opciones del select
-    modalBody.innerHTML = '';
-    Array.from(select.options).forEach(option => {
-      if (option.value) { // Evita opciones vacías
+    // Extraer todas las opciones válidas
+    const opciones = Array.from(select.options)
+      .filter(option => option.value)
+      .map(option => ({ value: option.value, text: option.text }));
+
+    let paginaActual = 1;
+    let opcionesFiltradas = [...opciones];
+
+    function renderTabla() {
+      modalBody.innerHTML = '';
+      const inicio = (paginaActual - 1) * filas;
+      const fin = inicio + filas;
+      const pagina = opcionesFiltradas.slice(inicio, fin);
+
+      pagina.forEach(opcion => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${option.text}</td>
+          <td>${opcion.text}</td>
           <td class="text-end">
-            <button type="button" class="btn btn-success btn-sm seleccionar-opcion-modal" data-value="${option.value}" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-success btn-sm seleccionar-opcion-modal" data-value="${opcion.value}" data-bs-dismiss="modal">
               <i class="bi bi-check-circle"></i> Seleccionar
             </button>
           </td>
         `;
         modalBody.appendChild(tr);
-      }
-    });
+      });
 
-    // Búsqueda
+      // Controles de paginación
+      const totalPaginas = Math.ceil(opcionesFiltradas.length / filas);
+      const paginacion = document.createElement('tr');
+      paginacion.innerHTML = `
+        <td colspan="2" class="text-center">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              <li class="page-item ${paginaActual === 1 ? 'disabled' : ''}">
+                <button class="page-link" id="anteriorPagina" ${paginaActual === 1 ? 'disabled' : ''}>&laquo; Anterior</button>
+              </li>
+              <li class="page-item disabled">
+                <span class="page-link">Página ${paginaActual} de ${totalPaginas || 1}</span>
+              </li>
+              <li class="page-item ${paginaActual === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}">
+                <button class="page-link" id="siguientePagina" ${(paginaActual === totalPaginas || totalPaginas === 0) ? 'disabled' : ''}>Siguiente &raquo;</button>
+              </li>
+            </ul>
+          </nav>
+        </td>
+      `;
+      modalBody.appendChild(paginacion);
+
+      // Eventos de paginación
+      document.getElementById('anteriorPagina')?.addEventListener('click', function () {
+        if (paginaActual > 1) {
+          paginaActual--;
+          renderTabla();
+        }
+      });
+      document.getElementById('siguientePagina')?.addEventListener('click', function () {
+        if (paginaActual < totalPaginas) {
+          paginaActual++;
+          renderTabla();
+        }
+      });
+    }
+
+    // Búsqueda global
     buscarInput.oninput = function () {
       const searchTerm = buscarInput.value.toLowerCase();
-      Array.from(modalBody.children).forEach(row => {
-        const text = row.querySelector('td').textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-      });
+      opcionesFiltradas = opciones.filter(opcion => opcion.text.toLowerCase().includes(searchTerm));
+      paginaActual = 1;
+      renderTabla();
     };
 
     // Selección
@@ -953,11 +1000,11 @@
       if (e.target.closest('.seleccionar-opcion-modal')) {
         const value = e.target.closest('.seleccionar-opcion-modal').dataset.value;
         select.value = value;
-        // Opcional: disparar change si necesitas lógica extra
         select.dispatchEvent(new Event('change'));
       }
     };
 
+    renderTabla();
     modal.show();
   }
 
