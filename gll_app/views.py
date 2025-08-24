@@ -125,9 +125,9 @@ def index(request):
     error_eliminacion = request.GET.get('error_eliminacion') == '1'
 
     if sexo_inicial == 'todos':
-        queryset = Gallo.objects.all()
+        queryset = Gallo.objects.all().order_by('nroPlaca')
     else:
-        queryset = Gallo.objects.filter(sexo=sexo_inicial)
+        queryset = Gallo.objects.filter(sexo=sexo_inicial).order_by('nroPlaca')
 
     paginator = Paginator(queryset, paginas)
     page_obj = paginator.get_page(page_inicial)
