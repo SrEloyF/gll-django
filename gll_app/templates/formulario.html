@@ -253,7 +253,11 @@
                   <input type="hidden" id="inputPadre" name="placaPadre" value="{{ padre_sel|default_if_none:'' }}">
                   <div class="d-flex align-items-center ms-md-2">
                     <span id="padreSeleccionado" class="badge bg-success {% if not padre_sel %}d-none{% endif %}">
-                      {% if padre_sel %}Placa: {{ padre_sel }}{% endif %}
+                      {% if placa_padre %}
+                        Placa: {{ placa_padre }}
+                      {% else %}
+                        Placa: —
+                      {% endif %}
                     </span>
                     {% if padre_sel %}
                     <button type="button" class="btn btn-danger btn-sm ms-2" id="quitarPadre">
@@ -278,9 +282,15 @@
                   </button>
                   <input type="hidden" id="inputMadre" name="placaMadre" value="{{ madre_sel|default_if_none:'' }}">
                   <div class="d-flex align-items-center ms-md-2">
+
                     <span id="madreSeleccionada" class="badge bg-success {% if not madre_sel %}d-none{% endif %}">
-                      {% if madre_sel %}Placa: {{ madre_sel }}{% endif %}
+                      {% if placa_madre %}
+                        Placa: {{ placa_madre }}
+                      {% else %}
+                        Placa: —
+                      {% endif %}
                     </span>
+
                     {% if madre_sel %}
                     <button type="button" class="btn btn-danger btn-sm ms-2" id="quitarMadre">
                       <i class="bi bi-x-circle me-1"></i> Quitar
@@ -341,7 +351,17 @@
               {% for g in gallos %}
               {% if g.sexo == 'M' %}
               <tr>
-                <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
+                {% if g.nroPlaca %}
+                  <td>
+                    <span class="fw-bold">{{ g.nroPlaca }}</span>
+                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+                  </td>
+                {% else %}
+                  <td>
+                    <span class="fw-bold">—</span>
+                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+                  </td>
+                {% endif %}
                 <td>{{ g.color }}</td>
                 {% if g.nombre_img %}
                   <td>
@@ -351,7 +371,7 @@
                   <td></td>
                 {% endif %}
                 <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-success seleccionar-padre" data-placa="{{ g.nroPlaca }}"
+                  <button type="button" class="btn btn-sm btn-success seleccionar-padre" data-placa="{{ g.nroPlaca|default:'—' }}"
                     data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
                     <i class="bi bi-check-circle me-1"></i> Seleccionar
                   </button>
@@ -404,7 +424,17 @@
               {% for g in gallos %}
               {% if g.sexo == 'H' %}
               <tr>
-                <td><span class="fw-bold">{{ g.nroPlaca }}</span></td>
+                {% if g.nroPlaca %}
+                  <td>
+                    <span class="fw-bold">{{ g.nroPlaca }}</span>
+                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+                  </td>
+                {% else %}
+                  <td>
+                    <span class="fw-bold">—</span>
+                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+                </td>
+                {% endif %}
                 <td>{{ g.color }}</td>
                 {% if g.nombre_img %}
                   <td>
@@ -414,7 +444,7 @@
                   <td></td>
                 {% endif %}
                 <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-danger seleccionar-madre" data-placa="{{ g.nroPlaca }}"
+                  <button type="button" class="btn btn-sm btn-danger seleccionar-madre" data-placa="{{ g.nroPlaca|default:'—' }}"
                     data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
                     <i class="bi bi-check-circle me-1"></i> Seleccionar
                   </button>
@@ -1032,7 +1062,7 @@
   // Selección de padre
   document.querySelectorAll('.seleccionar-padre').forEach(btn => {
     btn.onclick = () => {
-      const placa = btn.dataset.placa;
+      const placa = btn.dataset.placa || '—';
       const idGallo = btn.dataset.idgallo;
       document.getElementById('inputPadre').value = idGallo;
       const badge = document.getElementById('padreSeleccionado');
@@ -1046,7 +1076,7 @@
   // Selección de madre
   document.querySelectorAll('.seleccionar-madre').forEach(btn => {
     btn.onclick = () => {
-      const placa = btn.dataset.placa;
+      const placa = btn.dataset.placa || '—';
       const idGallo = btn.dataset.idgallo;
       document.getElementById('inputMadre').value = idGallo;
       const badge = document.getElementById('madreSeleccionada');

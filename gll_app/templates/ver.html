@@ -264,7 +264,12 @@
                     <div class="card-body">
                       {% if gallo.placaPadre %}
                         <p class="card-text mb-2">
-                          <strong>Placa:</strong> {{ gallo.placaPadre.nroPlaca }}
+                          <strong>Placa:</strong>
+                          {%if gallo.placaPadre.nroPlaca %}
+                            {{ gallo.placaPadre.nroPlaca }}
+                          {% else %}
+                            —
+                          {% endif %}
                         </p>
                         <p class="card-text mb-2">
                           <strong>Color:</strong> {{ gallo.placaPadre.color }}
@@ -295,7 +300,12 @@
                     <div class="card-body">
                       {% if gallo.placaMadre %}
                         <p class="card-text mb-2">
-                          <strong>Placa:</strong> {{ gallo.placaMadre.nroPlaca }}
+                          <strong>Placa:</strong> 
+                          {%if gallo.placaMadre.nroPlaca %}
+                            {{ gallo.placaMadre.nroPlaca }}
+                          {% else %}
+                            —
+                          {% endif %}
                         </p>
                         <p class="card-text mb-2">
                           <strong>Color:</strong> {{ gallo.placaMadre.color }}

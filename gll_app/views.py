@@ -12,19 +12,21 @@ from django.urls import reverse
 from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
+from django.db.models import F, Value
+from django.db.models.functions import Coalesce
 
 def filtros(request):
     columna = request.GET.get('columna', '')
     valor = request.GET.get('valor', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
     page = request.GET.get('page', 1)
 
-    queryset = Gallo.objects.all()
+    queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
 
     # Diccionario para mapear columna a filtro
     filtros_map = {
         'nroPlaca': 'nroPlaca__nroPlaca__icontains',
-        'fechaNac': 'fechaNac__icontains',
         'color': 'color__nombre__icontains',
         'sexo': 'sexo__icontains',
         'tipoGallo': 'tipoGallo__icontains',
@@ -32,10 +34,16 @@ def filtros(request):
         'nroPlacaAnterior': 'nroPlacaAnterior__nroPlaca__icontains',
         'nombreDuenoAnterior': 'nombreDuenoAnterior__nombre__icontains',
         'estadoDeSalud': 'estadoDeSalud__nombre__icontains',
-        'fechaMuerte': 'fechaMuerte__icontains',
     }
 
-    if columna and valor and columna in filtros_map:
+    if columna in ['fechaNac', 'fechaMuerte'] and (fecha_desde or fecha_hasta):
+        if fecha_desde:
+            filtro = {f'{columna}__gte': fecha_desde}
+            queryset = queryset.filter(**filtro)
+        if fecha_hasta:
+            filtro = {f'{columna}__lte': fecha_hasta}
+            queryset = queryset.filter(**filtro)
+    elif columna and valor and columna in filtros_map:
         filtro = {filtros_map[columna]: valor}
         queryset = queryset.filter(**filtro)
 
@@ -46,6 +54,8 @@ def filtros(request):
         'page_obj': page_obj,
         'columna': columna,
         'valor': valor,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
     })
 
 @csrf_exempt
@@ -125,9 +135,9 @@ def index(request):
     error_eliminacion = request.GET.get('error_eliminacion') == '1'
 
     if sexo_inicial == 'todos':
-        queryset = Gallo.objects.all().order_by('nroPlaca')
+        queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
     else:
-        queryset = Gallo.objects.filter(sexo=sexo_inicial).order_by('nroPlaca')
+        queryset = Gallo.objects.filter(sexo=sexo_inicial).order_by(Coalesce('nroPlaca', Value('z')).asc())
 
     paginator = Paginator(queryset, paginas)
     page_obj = paginator.get_page(page_inicial)
@@ -150,11 +160,11 @@ def gallo_list_ajax(request):
     page = request.GET.get('page', 1)
 
     if sexo == 'machos':
-        queryset = Gallo.objects.filter(sexo='M')
+        queryset = Gallo.objects.filter(sexo='M').order_by(Coalesce('nroPlaca', Value('z')).asc())
     elif sexo == 'hembras':
-        queryset = Gallo.objects.filter(sexo='H')
+        queryset = Gallo.objects.filter(sexo='H').order_by(Coalesce('nroPlaca', Value('z')).asc())
     else:
-        queryset = Gallo.objects.all()
+        queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
 
     paginator = Paginator(queryset, paginas)
     page_obj = paginator.get_page(page)
@@ -224,9 +234,9 @@ def crear(request):
         form = GalloForm()
 
     if form.instance and form.instance.nroPlaca:
-        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca)
+        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca).order_by(Coalesce('nroPlaca', Value('z')).asc())
     else:
-        gallos = Gallo.objects.all()
+        gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
 
     return render(
         request, 'formulario.html', 
@@ -261,15 +271,47 @@ def editar(request, idGallo):
     else:
         form = GalloForm(instance=gallo)
 
-    gallos = Gallo.objects.exclude(idGallo=gallo.idGallo)
+    gallos = Gallo.objects.exclude(idGallo=gallo.idGallo).order_by(Coalesce('nroPlaca', Value('z')).asc())
+
+    placa_padre = obtener_placa_madre_padre( gallo.idGallo, 'padre')
+    placa_madre = obtener_placa_madre_padre( gallo.idGallo, 'madre')
+
+    print("placa_padre:")
+    print(placa_padre)
+    print("placa_madre:")
+    print(placa_madre)
 
     contexto = {
         'form': form,
         'gallos': gallos,
         'padre_sel': gallo.placaPadre_id,
         'madre_sel': gallo.placaMadre_id,
+        'placa_padre': placa_padre,
+        'placa_madre': placa_madre,
+        'placa_padre_is_false': placa_padre is False,
+        'placa_madre_is_false': placa_madre is False,
     }
     return render(request, 'formulario.html', contexto)
+
+def obtener_placa_madre_padre(id_hijo, pariente):
+    try:
+        hijo = Gallo.objects.select_related('placaPadre__nroPlaca', 'placaMadre__nroPlaca').get(pk=id_hijo)
+
+        if pariente == 'padre':
+            if hijo.placaPadre is None:
+                return False  # No hay padre asignado
+            return hijo.placaPadre.nroPlaca if hijo.placaPadre.nroPlaca else None
+
+        elif pariente == 'madre':
+            if hijo.placaMadre is None:
+                return False  # No hay madre asignada
+            return hijo.placaMadre.nroPlaca if hijo.placaMadre.nroPlaca else None
+
+        else:
+            raise ValueError("El parámetro 'pariente' debe ser 'padre' o 'madre'.")
+
+    except Gallo.DoesNotExist:
+        return None  # El hijo no existe
 
 def eliminar(request, idGallo):
     gallo = get_object_or_404(Gallo, idGallo=idGallo)
@@ -315,7 +357,7 @@ def crear_encuentro(request):
     else:
         form = EncuentroForm()
 
-    gallos = Gallo.objects.all()
+    gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
     return render(request, 'encuentros/form_encuentro.html', {
         'form': form,
         'gallos': gallos,
@@ -328,7 +370,24 @@ def listar_encuentros(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'encuentros/listar_encuentros.html', {'page_obj': page_obj})
+    total_victorias = sum(1 for e in encuentros if e.resultado == 'V')
+    total_tablas = sum(1 for e in encuentros if e.resultado == 'T')
+    total_derrotas = sum(1 for e in encuentros if e.resultado == 'D')
+    total = total_victorias + total_tablas + total_derrotas
+
+    
+    def porcentaje(valor, total):
+        return round((valor / total * 100), 2) if total > 0 else 0
+
+    return render(request, 'encuentros/listar_encuentros.html', {
+        'page_obj': page_obj,
+        'total_victorias': total_victorias,
+        'total_tablas': total_tablas,
+        'total_derrotas': total_derrotas,
+        'porcentaje_victorias': porcentaje(total_victorias, total),
+        'porcentaje_tablas': porcentaje(total_tablas, total),
+        'porcentaje_derrotas': porcentaje(total_derrotas, total),
+    })
 
 def ver_encuentro(request, pk):
     # Obtener el encuentro con el pk proporcionado
@@ -455,7 +514,7 @@ def encuentro_form(request, pk=None):
     else:
         form = EncuentroForm(instance=encuentro)
 
-    gallos = Gallo.objects.all()
+    gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
     return render(request, 'encuentros/form_encuentro.html', {
         'form': form,
         'gallos': gallos,

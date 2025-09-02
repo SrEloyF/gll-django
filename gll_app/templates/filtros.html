@@ -287,7 +287,7 @@
               <td>
                 {% if gallo.fechaMuerte %}
                   <small class="text-danger">
-                    <i class="bi bi-calendar-x me-1"></i>{{ gallo.fechaMuerte }}
+                    <i class="bi bi-calendar-x me-1"></i>{{ gallo.fechaMuerte|date:"d/m/Y" }}
                   </small>
                 {% else %}
                   <span class="text-muted">---</span>
@@ -345,7 +345,7 @@
       <ul class="pagination pagination-lg shadow-sm">
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ page_obj.previous_page_number }}">
+            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}{% if fecha_desde %}fecha_desde={{ fecha_desde }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta }}&{% endif %}page={{ page_obj.previous_page_number }}">
               <i class="bi bi-chevron-left me-1"></i>
               <span class="d-none d-sm-inline">Anterior</span>
             </a>
@@ -366,14 +366,14 @@
             </li>
           {% else %}
             <li class="page-item">
-              <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ num }}">{{ num }}</a>
+              <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}{% if fecha_desde %}fecha_desde={{ fecha_desde }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta }}&{% endif %}page={{ page_obj.previous_page_number }}">
             </li>
           {% endif %}
         {% endfor %}
         
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}page={{ page_obj.next_page_number }}">
+            <a class="page-link" href="?{% if columna %}columna={{ columna }}&{% endif %}{% if valor %}valor={{ valor }}&{% endif %}{% if fecha_desde %}fecha_desde={{ fecha_desde }}&{% endif %}{% if fecha_hasta %}fecha_hasta={{ fecha_hasta }}&{% endif %}page={{ page_obj.previous_page_number }}">
               <span class="d-none d-sm-inline">Siguiente</span>
               <i class="bi bi-chevron-right ms-1"></i>
             </a>
@@ -458,30 +458,68 @@
 
     const label = document.createElement('label');
     label.className = 'form-label fw-medium text-muted mb-2';
-    label.innerHTML = '<i class="bi bi-search me-1"></i> Valor a buscar';
-
+    
     valorContainer.appendChild(label);
 
-    if (opciones[selected]) {
-        const select = document.createElement('select');
-        select.name = 'valor';
-        select.className = 'form-select form-select-lg shadow-sm';
-        select.id = 'valor-select';
-        select.innerHTML = '<option value="">-- Selecciona valor --</option>' +
-            opciones[selected].map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
-        valorContainer.appendChild(select);
+    if (selected === 'fechaNac' || selected === 'fechaMuerte') {
+      label.innerHTML = '<i class="bi bi-search me-1"></i> Fechas a buscar';
+      // Container para las fechas
+      const dateContainer = document.createElement('div');
+      dateContainer.className = 'row g-3';
+      
+      // Desde
+      const desdeDiv = document.createElement('div');
+      desdeDiv.className = 'col-6';
+      const desdeLabel = document.createElement('label');
+      desdeLabel.className = 'form-label fw-medium text-muted mb-2';
+      desdeLabel.innerHTML = '<i class="bi bi-calendar3"></i> Fecha Desde';
+      const desdeInput = document.createElement('input');
+      desdeInput.type = 'date';
+      desdeInput.name = 'fecha_desde';
+      desdeInput.className = 'form-control form-control-lg shadow-sm';
+      desdeDiv.appendChild(desdeLabel);
+      desdeDiv.appendChild(desdeInput);
+      
+      // Hasta
+      const hastaDiv = document.createElement('div');
+      hastaDiv.className = 'col-6';
+      const hastaLabel = document.createElement('label');
+      hastaLabel.className = 'form-label fw-medium text-muted mb-2';
+      hastaLabel.innerHTML = '<i class="bi bi-calendar3"></i> Fecha Hasta';
+      const hastaInput = document.createElement('input');
+      hastaInput.type = 'date';
+      hastaInput.name = 'fecha_hasta';
+      hastaInput.className = 'form-control form-control-lg shadow-sm';
+      hastaDiv.appendChild(hastaLabel);
+      hastaDiv.appendChild(hastaInput);
+      
+      dateContainer.appendChild(desdeDiv);
+      dateContainer.appendChild(hastaDiv);
+      valorContainer.appendChild(dateContainer);
+      
+      // Ocultar el input de valor original
+      const valorInput = document.querySelector('input[name="valor"]');
+      if (valorInput) valorInput.style.display = 'none';
+    } else if (opciones[selected]) {
+      label.innerHTML = '<i class="bi bi-search me-1"></i> Valor a buscar';
+      const select = document.createElement('select');
+      select.name = 'valor';
+      select.className = 'form-select form-select-lg shadow-sm';
+      select.id = 'valor-select';
+      select.innerHTML = '<option value="">-- Selecciona valor --</option>' +
+          opciones[selected].map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+      valorContainer.appendChild(select);
     } else {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = 'valor';
-        input.className = 'form-control form-control-lg shadow-sm';
-        input.placeholder = 'Ingresa el término de búsqueda...';
-        input.id = 'valor-input';
-        valorContainer.appendChild(input);
+      label.innerHTML = '<i class="bi bi-search me-1"></i> Valor a buscar';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'valor';
+      input.className = 'form-control form-control-lg shadow-sm';
+      input.placeholder = 'Ingresa el término de búsqueda...';
+      input.id = 'valor-input';
+      valorContainer.appendChild(input);
     }
-});
-
-
+  });
     function confirmarEliminacion(idGallo) {
       Swal.fire({
         title: '¿Estás seguro?',

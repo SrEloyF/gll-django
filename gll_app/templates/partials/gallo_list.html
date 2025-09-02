@@ -11,6 +11,7 @@
             <th>Sexo</th>
             <th class="d-none d-md-table-cell">Tipo</th>
             <th class="d-none d-lg-table-cell">Fecha Nac.</th>
+            <th class="d-none d-lg-table-cell">Fecha Muerte</th>
             <th class="text-end pe-2 pe-md-3">Acciones</th>
           </tr>
         </thead>
@@ -37,6 +38,13 @@
               <td class="d-none d-lg-table-cell">
                 {% if g.fechaNac %}
                 {{ g.fechaNac|date:"d/m/Y" }}
+                {% else %}
+                —
+                {% endif %}
+              </td>
+              <td class="d-none d-lg-table-cell">
+                {% if g.fechaMuerte %}
+                {{ g.fechaMuerte|date:"d/m/Y" }}
                 {% else %}
                 —
                 {% endif %}

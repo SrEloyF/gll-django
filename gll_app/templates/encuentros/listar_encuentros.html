@@ -53,8 +53,15 @@
             <div class="card-body d-flex align-items-center">
               <i class="bi bi-trophy fs-3 me-3 text-success"></i>
               <div>
-                <h6 class="card-title mb-0 text-success">Victorias</h6>
-                <p class="card-text fs-4 fw-bold mb-0" id="contador-victorias">0</p>
+                <h6 class="card-title mb-1 text-success">Victorias</h6>
+
+                <p class="card-text fs-3 fw-bold text-dark mb-0">
+                  {{ total_victorias|default:"0" }}
+                </p>
+
+                <small class="text-muted">
+                  victorias ({{ porcentaje_victorias }}%)
+                </small>
               </div>
             </div>
           </div>
@@ -64,8 +71,15 @@
             <div class="card-body d-flex align-items-center">
               <i class="bi bi-dash-circle fs-3 me-3 text-warning"></i>
               <div>
-                <h6 class="card-title mb-0 text-warning">Tablas</h6>
-                <p class="card-text fs-4 fw-bold mb-0" id="contador-tablas">0</p>
+                <h6 class="card-title mb-1 text-warning">Tablas</h6>
+
+                <p class="card-text fs-3 fw-bold text-dark mb-0">
+                  {{ total_tablas|default:"0" }}
+                </p>
+
+                <small class="text-muted">
+                  tablas ({{ porcentaje_tablas }}%)
+                </small>
               </div>
             </div>
           </div>
@@ -75,8 +89,15 @@
             <div class="card-body d-flex align-items-center">
               <i class="bi bi-x-circle fs-3 me-3 text-danger"></i>
               <div>
-                <h6 class="card-title mb-0 text-danger">Derrotas</h6>
-                <p class="card-text fs-4 fw-bold mb-0" id="contador-derrotas">0</p>
+                <h6 class="card-title mb-1 text-danger">Derrotas</h6>
+
+                <p class="card-text fs-3 fw-bold text-dark mb-0">
+                  {{ total_derrotas|default:"0" }}
+                </p>
+
+                <small class="text-muted">
+                  derrotas ({{ porcentaje_derrotas }}%)
+                </small>
               </div>
             </div>
           </div>
@@ -409,11 +430,7 @@
         }
       });
     }
-    
-    // Contar y mostrar resultados
-    let contadorVictorias = 0;
-    let contadorTablas = 0;
-    let contadorDerrotas = 0;
+
     const filas = document.querySelectorAll('.fila-encuentro');
     
     // Crear colecciones para las pestañas
@@ -442,21 +459,13 @@
       `;
       
       if (resultado === 'V') {
-        contadorVictorias++;
         contenidoVictorias += rowHTML;
       } else if (resultado === 'T') {
-        contadorTablas++;
         contenidoTablas += rowHTML;
       } else if (resultado === 'D') {
-        contadorDerrotas++;
         contenidoDerrotas += rowHTML;
       }
     });
-    
-    // Actualizar contadores
-    document.getElementById('contador-victorias').textContent = contadorVictorias;
-    document.getElementById('contador-tablas').textContent = contadorTablas;
-    document.getElementById('contador-derrotas').textContent = contadorDerrotas;
     
     // Rellenar las tablas por resultado
     function llenarTabla(id, contenido, mensaje) {
