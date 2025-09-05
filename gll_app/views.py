@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F, Value
 from django.db.models.functions import Coalesce
+import mimetypes
 
 def filtros(request):
     columna = request.GET.get('columna', '')
@@ -22,7 +23,7 @@ def filtros(request):
     fecha_hasta = request.GET.get('fecha_hasta', '')
     page = request.GET.get('page', 1)
 
-    queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+    queryset = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
 
     # Diccionario para mapear columna a filtro
     filtros_map = {
@@ -135,9 +136,9 @@ def index(request):
     error_eliminacion = request.GET.get('error_eliminacion') == '1'
 
     if sexo_inicial == 'todos':
-        queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+        queryset = Gallo.objects.order_by(F('nroPlaca_id').asc(nulls_last=True))
     else:
-        queryset = Gallo.objects.filter(sexo=sexo_inicial).order_by(Coalesce('nroPlaca', Value('z')).asc())
+        queryset = Gallo.objects.filter(sexo=sexo_inicial).order_by(F('nroPlaca_id').asc(nulls_last=True))
 
     paginator = Paginator(queryset, paginas)
     page_obj = paginator.get_page(page_inicial)
@@ -160,11 +161,11 @@ def gallo_list_ajax(request):
     page = request.GET.get('page', 1)
 
     if sexo == 'machos':
-        queryset = Gallo.objects.filter(sexo='M').order_by(Coalesce('nroPlaca', Value('z')).asc())
+        queryset = Gallo.objects.filter(sexo='M').order_by(F('nroPlaca_id').asc(nulls_last=True))
     elif sexo == 'hembras':
-        queryset = Gallo.objects.filter(sexo='H').order_by(Coalesce('nroPlaca', Value('z')).asc())
+        queryset = Gallo.objects.filter(sexo='H').order_by(F('nroPlaca_id').asc(nulls_last=True))
     else:
-        queryset = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+        queryset = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
 
     paginator = Paginator(queryset, paginas)
     page_obj = paginator.get_page(page)
@@ -205,7 +206,75 @@ def ver(request, idGallo):
         edadGallo = ', '.join(edad_texto)
     
     return render(request, 'ver.html', {'gallo': gallo, 'edadGallo': edadGallo})
+
+@csrf_exempt
+def upload_archivo_adicional(request, idGallo):
+    """Vista AJAX para subir archivos adicionales"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
     
+    try:
+        gallo = Gallo.objects.get(pk=idGallo)
+        archivo = request.FILES.get('archivo')
+        
+        if not archivo:
+            return JsonResponse({'error': 'No se recibió ningún archivo'}, status=400)
+        
+        # Determinar el tipo de archivo
+        mime_type, _ = mimetypes.guess_type(archivo.name)
+        if mime_type:
+            if mime_type.startswith('image/'):
+                tipo = 'imagen'
+            elif mime_type.startswith('video/'):
+                tipo = 'video'
+            else:
+                return JsonResponse({'error': 'Tipo de archivo no permitido'}, status=400)
+        else:
+            # Fallback basado en extensión
+            ext = archivo.name.split('.')[-1].lower()
+            if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+                tipo = 'imagen'
+            elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
+                tipo = 'video'
+            else:
+                return JsonResponse({'error': 'Tipo de archivo no reconocido'}, status=400)
+        
+        # Crear el registro de archivo adicional
+        archivo_adicional = ArchivosAdicionales()
+        archivo_adicional.content_object = gallo
+        archivo_adicional.tipo = tipo
+        archivo_adicional._request = request  # Para ImageKitField
+        archivo_adicional.archivo = archivo
+        archivo_adicional.save()
+        
+        return JsonResponse({
+            'success': True,
+            'id': archivo_adicional.id,
+            'url': archivo_adicional.archivo,
+            'tipo': tipo,
+            'nombre': archivo.name
+        })
+    
+    except Gallo.DoesNotExist:
+        return JsonResponse({'error': 'Gallo no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def delete_archivo_adicional(request, archivo_id):
+    """Vista AJAX para eliminar archivos adicionales"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        archivo = ArchivosAdicionales.objects.get(pk=archivo_id)
+        archivo.delete()
+        return JsonResponse({'success': True})
+    except ArchivosAdicionales.DoesNotExist:
+        return JsonResponse({'error': 'Archivo no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 def crear(request):
     if request.method == 'POST':
         form = GalloForm(request.POST, request.FILES)
@@ -222,6 +291,33 @@ def crear(request):
                     gallo.placaMadre_id = placa_madre
 
                 gallo.save()
+
+                archivos = request.FILES.getlist('archivos_adicionales[]')
+                for archivo in archivos:
+                    mime_type, _ = mimetypes.guess_type(archivo.name)
+                    if mime_type:
+                        if mime_type.startswith('image/'):
+                            tipo = 'imagen'
+                        elif mime_type.startswith('video/'):
+                            tipo = 'video'
+                        else:
+                            continue  # Saltar archivos no soportados
+                    else:
+                        ext = archivo.name.split('.')[-1].lower()
+                        if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+                            tipo = 'imagen'
+                        elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
+                            tipo = 'video'
+                        else:
+                            continue
+                    
+                    archivo_adicional = ArchivosAdicionales()
+                    archivo_adicional.content_object = gallo
+                    archivo_adicional.tipo = tipo
+                    archivo_adicional._request = request
+                    archivo_adicional.archivo = archivo
+                    archivo_adicional.save()
+
                 return redirect('ver', idGallo=gallo.idGallo)
 
             except Exception as e:
@@ -234,9 +330,9 @@ def crear(request):
         form = GalloForm()
 
     if form.instance and form.instance.nroPlaca:
-        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca).order_by(Coalesce('nroPlaca', Value('z')).asc())
+        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca).order_by(F('nroPlaca_id').asc(nulls_last=True))
     else:
-        gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+        gallos = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
 
     return render(
         request, 'formulario.html', 
@@ -254,6 +350,10 @@ def ajax_valida_placa(request):
 def editar(request, idGallo):
     gallo = get_object_or_404(Gallo, idGallo=idGallo)
     if request.method == 'POST':
+
+        print("DEBUG - Files recibidos:", request.FILES)
+        print("DEBUG - POST data:", request.POST)
+
         form = GalloForm(request.POST, request.FILES, instance=gallo)
         if form.is_valid():
             placa_padre = request.POST.get('placaPadre') or None
@@ -267,19 +367,53 @@ def editar(request, idGallo):
                 gallo.placaPadre_id = placa_padre
                 gallo.placaMadre_id = placa_madre
                 gallo.save()
+
+                archivos = request.FILES.getlist('archivos_adicionales[]')
+                print("DEBUG - Archivos adicionales encontrados:", len(archivos))
+                for archivo in archivos:
+                    print(f"DEBUG - Procesando archivo: {archivo.name}")
+                    try:
+                        mime_type, _ = mimetypes.guess_type(archivo.name)
+                        if mime_type:
+                            if mime_type.startswith('image/'):
+                                tipo = 'imagen'
+                            elif mime_type.startswith('video/'):
+                                tipo = 'video'
+                            else:
+                                print(f"DEBUG - Tipo MIME no soportado: {mime_type}")
+                                continue
+                        else:
+                            ext = archivo.name.split('.')[-1].lower()
+                            if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+                                tipo = 'imagen'
+                            elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
+                                tipo = 'video'
+                            else:
+                                print(f"DEBUG - Extensión no soportada: {ext}")
+                                continue
+                        
+                        archivo_adicional = ArchivosAdicionales()
+                        archivo_adicional.content_object = gallo
+                        archivo_adicional.tipo = tipo
+                        archivo_adicional._request = request
+                        archivo_adicional.archivo = archivo
+                        archivo_adicional.save()
+                        print(f"DEBUG - Archivo guardado exitosamente: {archivo.name}")
+                    except Exception as e:
+                        print(f"DEBUG - Error al guardar archivo {archivo.name}:", str(e))
+
                 return redirect('ver', idGallo=gallo.idGallo)
     else:
         form = GalloForm(instance=gallo)
 
-    gallos = Gallo.objects.exclude(idGallo=gallo.idGallo).order_by(Coalesce('nroPlaca', Value('z')).asc())
+    gallos = Gallo.objects.exclude(idGallo=gallo.idGallo).order_by(F('nroPlaca_id').asc(nulls_last=True))
 
     placa_padre = obtener_placa_madre_padre( gallo.idGallo, 'padre')
     placa_madre = obtener_placa_madre_padre( gallo.idGallo, 'madre')
 
-    print("placa_padre:")
-    print(placa_padre)
-    print("placa_madre:")
-    print(placa_madre)
+    archivos_adicionales = gallo.archivos_adicionales.all()
+    archivos_imagenes = archivos_adicionales.filter(tipo='imagen')
+    archivos_videos = archivos_adicionales.filter(tipo='video')
 
     contexto = {
         'form': form,
@@ -290,6 +424,8 @@ def editar(request, idGallo):
         'placa_madre': placa_madre,
         'placa_padre_is_false': placa_padre is False,
         'placa_madre_is_false': placa_madre is False,
+        'archivos_imagenes': archivos_imagenes,
+        'archivos_videos': archivos_videos,
     }
     return render(request, 'formulario.html', contexto)
 
@@ -357,7 +493,7 @@ def crear_encuentro(request):
     else:
         form = EncuentroForm()
 
-    gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+    gallos = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
     return render(request, 'encuentros/form_encuentro.html', {
         'form': form,
         'gallos': gallos,
@@ -514,7 +650,7 @@ def encuentro_form(request, pk=None):
     else:
         form = EncuentroForm(instance=encuentro)
 
-    gallos = Gallo.objects.all().order_by(Coalesce('nroPlaca', Value('z')).asc())
+    gallos = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
     return render(request, 'encuentros/form_encuentro.html', {
         'form': form,
         'gallos': gallos,

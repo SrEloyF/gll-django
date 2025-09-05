@@ -25,7 +25,7 @@
     </div>
 
     <div class="card-body">
-      <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+      <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate id="mainForm">
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -214,7 +214,7 @@
           {% if form.instance.nombre_img %}
           <div class="mb-3">
             <img src="{{ form.instance.nombre_img }}" class="img-fluid img-thumbnail" alt="Imagen actual del gallo"
-              style="max-height: 200px;">
+              style="max-height: 200px;" loading="lazy">
             <p class="form-text mt-1">Imagen actual. Seleccione una nueva imagen para reemplazarla.</p>
           </div>
           {% endif %}
@@ -232,6 +232,100 @@
             {% else %}
             Seleccione una imagen del ave para su registro.
             {% endif %}
+          </div>
+        </div>
+
+        <!-- Archivos Adicionales - Solo mostrar si estamos editando -->
+        {% if form.instance.pk %}
+          {% if archivos_imagenes or archivos_videos %}
+          <div class="card mt-4 mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-folder-fill me-2"></i>Archivos Adicionales Añadidos
+              </h5>
+            </div>
+            <div class="card-body">
+              {% if archivos_imagenes %}
+              <div class="mb-3">
+                <h6><i class="bi bi-image me-1"></i>Imágenes:</h6>
+                <div class="row g-2">
+                  {% for imagen in archivos_imagenes %}
+                  <div class="col-6 col-md-4 col-lg-3" id="archivo-{{ imagen.id }}">
+                    <div class="position-relative">
+                      <img src="{{ imagen.archivo }}" class="img-fluid img-thumbnail" alt="Imagen adicional" loading="lazy">
+                      <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                              onclick="eliminarArchivo({{ imagen.id }})">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                    <small class="text-muted d-block text-center">{{ imagen.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+              
+              {% if archivos_videos %}
+              <div class="mb-3">
+                <h6><i class="bi bi-camera-video me-1"></i>Videos:</h6>
+                <div class="row g-2">
+                  {% for video in archivos_videos %}
+                  <div class="col-12 col-md-4" id="archivo-{{ video.id }}">
+                    <div class="position-relative">
+                      <video controls class="w-100" style="max-height: 200px;" preload="none">
+                        <source src="{{ video.archivo }}" type="video/mp4">
+                        Tu navegador no soporta la reproducción de video.
+                      </video>
+                      <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" 
+                              onclick="eliminarArchivo({{ video.id }})">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                    <small class="text-muted d-block text-center">{{ video.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        {% endif %}
+
+        <!-- Sección para añadir nuevos archivos -->
+        <div class="card mt-4 mb-4 border-success">
+          <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-plus-circle me-2"></i>Añadir Archivos Adicionales
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label">Seleccionar archivos (imágenes o videos)</label>
+              <div class="input-group">
+                <!-- name important para compatibilidad con envío tradicional -->
+                <input type="file"
+                      id="archivos_adicionales_input"
+                      name="archivos_adicionales[]"
+                      class="form-control"
+                      accept="image/*,video/*"
+                      multiple
+                      onchange="handleFilesSelected(this)">
+                <button type="button" class="btn btn-outline-secondary" onclick="limpiarArchivos()">
+                  <i class="bi bi-x-circle"></i> Limpiar
+                </button>
+              </div>
+              <div class="form-text">
+                Puedes seleccionar múltiples imágenes o videos.
+              </div>
+            </div>
+
+            <!-- Preview de archivos a subir -->
+            <div id="preview-archivos" class="d-none">
+              <h6>Archivos a subir (<span id="contador-archivos">0</span>):</h6>
+              <!-- Lista numerada y visual -->
+              <div id="lista-archivos" class="row g-2"></div>
+            </div>
           </div>
         </div>
 
@@ -365,7 +459,7 @@
                 <td>{{ g.color }}</td>
                 {% if g.nombre_img %}
                   <td>
-                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;">
+                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
                   </td>
                 {% else %}
                   <td></td>
@@ -438,7 +532,7 @@
                 <td>{{ g.color }}</td>
                 {% if g.nombre_img %}
                   <td>
-                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;">
+                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
                   </td>
                 {% else %}
                   <td></td>
@@ -497,6 +591,44 @@
     </div>
   </div>
 </div>
+
+<!-- OVERLAY GLOBAL (coloque justo antes del cierre </body>) -->
+<div id="upload-overlay" style="display:none;">
+  <div id="upload-overlay-backdrop"></div>
+  <div id="upload-overlay-card" role="status" aria-live="polite">
+    <div id="upload-overlay-spinner" aria-hidden="true"></div>
+    <div id="upload-overlay-text">
+      <strong>Guardando datos, no cierre esta pestaña</strong>
+      <div id="upload-overlay-subtext">Subiendo archivos... por favor espere</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Backdrop y tarjeta centrada */
+  #upload-overlay { position: fixed; inset: 0; z-index: 2000; font-family: inherit; }
+  #upload-overlay-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.55); }
+  #upload-overlay-card {
+    position: absolute;
+    left: 50%; top: 45%;
+    transform: translate(-50%, -50%);
+    background: #fff; color: #000; padding: 20px; border-radius: 8px;
+    width: 320px; max-width: 90%; display:flex; gap:12px; align-items:center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+  #upload-overlay-spinner {
+    width:48px; height:48px; border-radius:50%;
+    border:5px solid rgba(0,0,0,0.12); border-top-color: #0d6efd;
+    animation: spin 1s linear infinite;
+    flex: 0 0 48px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #upload-overlay-text { flex:1; font-size:0.95rem; }
+  #upload-overlay-subtext { font-size:0.85rem; color:#555; margin-top:6px; }
+
+</style>
+
 
 <script>
 
@@ -1086,6 +1218,370 @@
       botonEliminarMadre.classList.remove('d-none');
     };
   });
+
+  let archivosParaSubir = []; // tu array de File
+  let storedFormData = null;
+  const form = document.querySelector('#mainForm');
+
+  function previewArchivos(input) {
+    const files = Array.from(input.files);
+    archivosParaSubir = files;
+    
+    const previewContainer = document.getElementById('preview-archivos');
+    const listaArchivos = document.getElementById('lista-archivos');
+    
+    if (files.length === 0) {
+      previewContainer.classList.add('d-none');
+      return;
+    }
+    
+    previewContainer.classList.remove('d-none');
+    listaArchivos.innerHTML = '';
+    
+    files.forEach((file, index) => {
+      const col = document.createElement('div');
+      col.className = 'col-6 col-md-4 col-lg-3';
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          card.innerHTML = `
+            <img src="${e.target.result}" class="card-img-top img-fluid" alt="${file.name}">
+            <div class="card-body p-1">
+              <small class="text-truncate d-block">${file.name}</small>
+              <button type="button" class="btn btn-sm btn-danger w-100 mt-1" onclick="quitarArchivo(${index})">
+                <i class="bi bi-trash"></i> Quitar
+              </button>
+            </div>
+          `;
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        card.innerHTML = `
+          <div class="card-body text-center">
+            <i class="bi bi-camera-video fs-1"></i>
+            <small class="text-truncate d-block">${file.name}</small>
+            <button type="button" class="btn btn-sm btn-danger w-100 mt-1" onclick="quitarArchivo(${index})">
+              <i class="bi bi-trash"></i> Quitar
+            </button>
+          </div>
+        `;
+      }
+      
+      col.appendChild(card);
+      listaArchivos.appendChild(col);
+    });
+  }
+
+  function quitarArchivo(index) {
+    archivosParaSubir.splice(index, 1);
+    
+    // Recrear el input con los archivos restantes
+    const dt = new DataTransfer();
+    archivosParaSubir.forEach(file => dt.items.add(file));
+    
+    const input = document.getElementById('archivos_adicionales_input');
+    input.files = dt.files;
+    
+    previewArchivos(input);
+  }
+
+  function limpiarArchivos() {
+    archivosParaSubir = [];
+    document.getElementById('archivos_adicionales_input').value = '';
+    document.getElementById('preview-archivos').classList.add('d-none');
+  }
+
+  {% if form.instance.pk %}
+  function eliminarArchivo(archivoId) {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch(`{% url 'delete_archivo_adicional' archivo_id=0 %}`.replace('0', archivoId), {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById(`archivo-${archivoId}`).remove();
+            Swal.fire('¡Eliminado!', 'El archivo ha sido eliminado.', 'success');
+            
+            // Verificar si quedan archivos, si no hay, ocultar la sección
+            const contenedor = document.querySelector('.card.border-warning');
+            if (contenedor) {
+              const imagenesRestantes = contenedor.querySelectorAll('[id^="archivo-"]').length;
+              if (imagenesRestantes === 0) {
+                contenedor.remove();
+              }
+            }
+          } else {
+            Swal.fire('Error', data.error || 'No se pudo eliminar el archivo', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          Swal.fire('Error', 'Error al eliminar el archivo', 'error');
+        });
+      }
+    });
+  }
+  {% endif %}
+
+  function handleFilesSelected(input) {
+    // Convertir FileList a array
+    const nuevos = Array.from(input.files || []);
+    // Añadir solo los que no están duplicados (compara nombre+size+lastModified)
+    nuevos.forEach(f => {
+      const existe = archivosParaSubir.some(a =>
+        a.name === f.name && a.size === f.size && a.lastModified === f.lastModified
+      );
+      if (!existe) archivosParaSubir.push(f);
+    });
+
+    // Vaciar el input para permitir escoger de nuevo los mismos archivos posteriormente
+    input.value = '';
+
+    // Renderizar la vista previa y sincronizar input.files con archivosParaSubir
+    renderPreview();
+    syncInputFilesWithArray();
+  }
+
+  function syncInputFilesWithArray() {
+    const input = document.getElementById('archivos_adicionales_input');
+    if (!window.DataTransfer) {
+      // Si no soporta DataTransfer (muy raro), no hacemos nada
+      return;
+    }
+    const dt = new DataTransfer();
+    archivosParaSubir.forEach(file => dt.items.add(file));
+    input.files = dt.files;
+  }
+
+  function renderPreview() {
+    const previewContainer = document.getElementById('preview-archivos');
+    const listaArchivos = document.getElementById('lista-archivos');
+    const contador = document.getElementById('contador-archivos');
+
+    listaArchivos.innerHTML = '';
+
+    if (archivosParaSubir.length === 0) {
+      previewContainer.classList.add('d-none');
+      contador.textContent = '0';
+      return;
+    }
+
+    previewContainer.classList.remove('d-none');
+    contador.textContent = archivosParaSubir.length;
+
+    archivosParaSubir.forEach((file, index) => {
+      // Col contenedor
+      const col = document.createElement('div');
+      col.className = 'col-12 col-md-6 col-lg-4';
+
+      // Tarjeta
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      // Cabecera numerada con nombre y botón quitar (texto "ImagenN (quitar)")
+      const header = document.createElement('div');
+      header.className = 'card-header d-flex justify-content-between align-items-center p-2';
+      const title = document.createElement('small');
+      title.className = 'fw-bold text-truncate';
+      title.style.maxWidth = '70%';
+      // Mostrar "ImagenX" o "ArchivoX" según tipo
+      const tipoLabel = file.type.startsWith('image/') ? 'Imagen' : (file.type.startsWith('video/') ? 'Video' : 'Archivo');
+      title.textContent = `${tipoLabel}${index + 1} — ${file.name}`;
+
+      const btnQuitar = document.createElement('button');
+      btnQuitar.type = 'button';
+      btnQuitar.className = 'btn btn-sm btn-outline-danger';
+      btnQuitar.innerHTML = '<i class="bi bi-trash"></i> Quitar';
+      btnQuitar.onclick = () => quitarArchivo(index);
+
+      header.appendChild(title);
+      header.appendChild(btnQuitar);
+      card.appendChild(header);
+
+      // Cuerpo: miniatura para imágenes, icono para vídeos/otros
+      const body = document.createElement('div');
+      body.className = 'card-body p-2 text-center';
+
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.style.height = '120px';
+        img.style.objectFit = 'cover';
+        img.className = 'img-fluid';
+        // Leer con FileReader
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        body.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        // Icono y nombre
+        const ico = document.createElement('div');
+        ico.className = 'mb-2';
+        ico.innerHTML = '<i class="bi bi-camera-video fs-1"></i>';
+        body.appendChild(ico);
+        const small = document.createElement('small');
+        small.className = 'd-block text-truncate';
+        small.textContent = file.name;
+        body.appendChild(small);
+      } else {
+        const small = document.createElement('small');
+        small.className = 'd-block text-truncate';
+        small.textContent = file.name;
+        body.appendChild(small);
+      }
+
+      card.appendChild(body);
+      col.appendChild(card);
+      listaArchivos.appendChild(col);
+    });
+  }
+
+  function quitarArchivo(index) {
+    if (index < 0 || index >= archivosParaSubir.length) return;
+    archivosParaSubir.splice(index, 1);
+    renderPreview();
+    syncInputFilesWithArray();
+  }
+
+  function limpiarArchivos() {
+    archivosParaSubir = [];
+    const input = document.getElementById('archivos_adicionales_input');
+    input.value = '';
+    renderPreview();
+    syncInputFilesWithArray();
+  }
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('form');
+
+  function showOverlay(withProgress = true) {
+    document.getElementById('upload-overlay').style.display = 'block';
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+    disableFormControls(true);
+  }
+  function hideOverlay() {
+    document.getElementById('upload-overlay').style.display = 'none';
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    disableFormControls(false);
+  }
+  function beforeUnloadHandler(e) {
+    const confirmationMessage = 'Guardando datos, si sale la subida se cancelará.';
+    e.returnValue = confirmationMessage;
+    return confirmationMessage;
+  }
+  function disableFormControls(disable) {
+    const controls = form.querySelectorAll('input, button, select, textarea');
+    controls.forEach(c => c.disabled = disable);
+  }
+
+  form.onsubmit = function (e) {
+    e.preventDefault();
+
+    // Prevención de doble-envío (doble-click / handler duplicado)
+    if (form.dataset.uploading === '1') {
+      console.warn('Ya hay una subida en curso — petición ignorada.');
+      return;
+    }
+    form.dataset.uploading = '1';
+
+    // Preparar FormData: partimos del form, pero ELIMINAMOS entradas previas de archivos
+    const fd = new FormData(form);
+    // IMPORTANTE: eliminar cualquier entrada con esa key para evitar duplicados
+    fd.delete('archivos_adicionales[]');
+
+    // Añadir los archivos acumulados en la variable global (archivosParaSubir)
+    archivosParaSubir.forEach(file => {
+      fd.append('archivos_adicionales[]', file);
+    });
+
+    const csrftokenInput = form.querySelector('[name="csrfmiddlewaretoken"]');
+    const csrftoken = csrftokenInput ? csrftokenInput.value : '';
+
+    // Mostrar overlay y bloquear UI
+    //showOverlay(true);
+    showOverlay();
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action || window.location.href, true);
+    xhr.withCredentials = true;
+    if (csrftoken) xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+    xhr.upload.onprogress = function (evt) {
+      if (evt.lengthComputable) {
+        const percentComplete = (evt.loaded / evt.total) * 100;
+        //setProgress(percentComplete);
+      } else {
+        //setProgress(50);
+      }
+    };
+
+    xhr.onload = function () {
+      form.dataset.uploading = '0'; // liberar flag
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // si servidor devuelve redirect en JSON {redirect: "..."}
+        try {
+          const json = JSON.parse(xhr.responseText);
+          if (json && json.redirect) {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            window.location = json.redirect;
+            return;
+          }
+        } catch (err) {
+          // no JSON, intentar responseURL
+        }
+
+        // Si el servidor hizo una redirect 302, XHR no navegará automáticamente.
+        // Si el servidor devolviera responseURL distinto, navegar:
+        try {
+          const responseURL = xhr.responseURL;
+          if (responseURL && responseURL !== window.location.href) {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            window.location = responseURL;
+            return;
+          }
+        } catch (err) { /* ignore */ }
+
+        // Si no hay redirect, ocultar overlay
+        //setProgress(100);
+        hideOverlay();
+        console.log('Subida completada:', xhr.responseText);
+      } else {
+        hideOverlay();
+        alert('Error en la subida: ' + xhr.status);
+        console.error('XHR error', xhr.status, xhr.responseText);
+      }
+    };
+
+    xhr.onerror = function () {
+      form.dataset.uploading = '0';
+      hideOverlay();
+      alert('Error de conexión durante la subida.');
+    };
+
+    xhr.send(fd);
+  };
+});
+
+
 
 </script>
 {% endblock %}

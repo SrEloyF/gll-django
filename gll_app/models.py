@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 import base64
 import time
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 
 class ImageKitField(models.CharField):
     def __init__(self, folder=None, *args, **kwargs):
@@ -149,6 +151,28 @@ class PesosCheck(models.Model):
     def __str__(self):
         return str(self.peso)
 
+class ArchivosAdicionales(models.Model):
+    TIPO_ARCHIVO = [
+        ('imagen', 'Imagen'),
+        ('video', 'Video')
+    ]
+    
+    archivo = ImageKitField(folder='gll/archivos_adicionales', null=False)
+    tipo = models.CharField(max_length=6, choices=TIPO_ARCHIVO)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-fecha_creacion']
+        verbose_name = "Archivo adicional"
+        verbose_name_plural = "Archivos adicionales"
+    
+    def __str__(self):
+        return f"Archivo {self.tipo} para {self.content_object}"
+
+
 class Gallo(models.Model):
     idGallo = models.AutoField(primary_key=True)
     nroPlaca = models.ForeignKey(PlacaCheck, null=True, blank=False, on_delete=models.PROTECT, related_name='gallo_por_placa')
@@ -171,6 +195,7 @@ class Gallo(models.Model):
     nombre_img = ImageKitField(folder='gll/gallos')
     placaPadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_padre')
     placaMadre = models.ForeignKey('self', null=True, blank=False, on_delete=models.SET_NULL, related_name='hijos_madre')
+    archivos_adicionales = GenericRelation(ArchivosAdicionales)
 
     def __str__(self):
         return f"Gallo {self.nroPlaca if self.nroPlaca is not None else 'S.P.'}"

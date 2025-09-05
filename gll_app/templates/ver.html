@@ -327,6 +327,84 @@
               </div>
             </div>
           </div>
+
+          <!-- Archivos adicionales -->
+          {% if gallo.archivos_adicionales.all %}
+            <div class="card border-0 shadow-sm mt-4">
+              <div class="card-header bg-light py-2">
+                <h5 class="card-title mb-0 fs-5">
+                  <i class="bi bi-folder me-2"></i>Archivos Adicionales
+                </h5>
+              </div>
+              <div class="card-body">
+                <!-- Imágenes -->
+                {% with imagenes=gallo.archivos_adicionales.filter.filter tipo='imagen' %}
+                {% if imagenes %}
+                <div class="mb-4">
+                  <h6 class="mb-3"><i class="bi bi-images me-2"></i>Imágenes</h6>
+                  <div class="row g-3">
+                    {% for archivo in gallo.archivos_adicionales.all %}
+                    {% if archivo.tipo == 'imagen' %}
+                    <div class="col-6 col-md-4 col-lg-3">
+                      <div class="card h-100">
+                        <img src="{{ archivo.archivo }}" 
+                            class="card-img-top" 
+                            alt="Imagen adicional"
+                            style="height: 160px; object-fit: cover;"
+                            loading="lazy">
+                        <div class="card-footer p-2 text-center bg-light">
+                          <small class="text-muted">
+                            {{ archivo.fecha_creacion|date:"d/m/Y H:i" }}
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Videos -->
+                {% with videos=gallo.archivos_adicionales.filter.filter tipo='video' %}
+                {% if videos %}
+                <div>
+                  <h6 class="mb-3"><i class="bi bi-camera-video me-2"></i>Videos</h6>
+                  <div class="row g-3">
+                    {% for archivo in gallo.archivos_adicionales.all %}
+                    {% if archivo.tipo == 'video' %}
+                    <div class="col-12 col-md-6">
+                      <div class="card h-100">
+                        <div class="card-body p-2">
+                          <video controls class="w-100" style="max-height: 200px;" preload="none">
+                            <source src="{{ archivo.archivo }}" type="video/mp4">
+                            Tu navegador no soporta la reproducción de video.
+                          </video>
+                        </div>
+                        <div class="card-footer p-2 text-center bg-light">
+                          <small class="text-muted">
+                            {{ archivo.fecha_creacion|date:"d/m/Y H:i" }}
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% if not gallo.archivos_adicionales.exists %}
+                <div class="text-center text-muted py-4">
+                  <i class="bi bi-folder2-open display-4 d-block mb-3"></i>
+                  <p class="mb-0">No hay archivos adicionales</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
           
           <!-- Botones de acción - Adaptados para móviles -->
           <div class="d-flex flex-column flex-md-row gap-2 justify-content-end mt-4">

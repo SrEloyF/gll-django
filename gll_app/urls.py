@@ -9,6 +9,8 @@ urlpatterns = [
     path('editar/<int:idGallo>/', views.editar, name='editar'),
     path('eliminar/<int:idGallo>/', views.eliminar, name='eliminar'),
     path('comprobarNroPLaca/', views.ajax_valida_placa, name='ajax_valida_placa'),
+    path('gallo/<int:idGallo>/upload-archivo/', views.upload_archivo_adicional, name='upload_archivo_adicional'),
+    path('archivo/<int:archivo_id>/delete/', views.delete_archivo_adicional, name='delete_archivo_adicional'),
 
     #encuentros
     path('encuentros/', views.listar_encuentros, name='listar_encuentros'),
