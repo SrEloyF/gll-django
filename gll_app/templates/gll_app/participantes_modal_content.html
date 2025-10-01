@@ -1,0 +1,60 @@
+<div class="input-group mb-2">
+    <input type="text" class="form-control" id="buscarPlacaParticipante" placeholder="Buscar por placa en esta página">
+    <button class="btn btn-outline-secondary" type="button" id="mostrarPlacaNoneParticipante">Placa None</button>
+  </div>
+  <div id="participante-no-encontrado" class="d-none mb-2">
+    <button class="btn btn-warning w-100" type="button" id="buscarParticipanteEnBD">Buscar en toda la BD</button>
+  </div>
+  <div class="table-responsive modal-table-container" style="max-height: 400px; overflow-y: auto;">
+    <table class="table table-bordered table-hover" id="tablaParticipantes">
+      <thead class="table-light">
+        <tr data-idgallo="{{ gallo.idGallo }}">
+          <th><i class="bi bi-tag me-1"></i>Placa</th>
+          <th><i class="bi bi-palette me-1"></i>Color</th>
+          <th><i class="bi bi-gender-ambiguous me-1"></i>Sexo</th>
+          <th><i class="bi bi-image me-1"></i>Imagen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for gallo in participantes %}
+        <tr class="gallo-row" data-placa="{{ gallo.nroPlaca|default:'—' }}" data-idgallo="{{ gallo.idGallo }}">
+          {% if gallo.nroPlaca %}
+            <td>
+              <span class="fw-bold">{{ gallo.nroPlaca }}</span>
+              <a href="{% url 'ver' gallo.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+            </td>
+          {% else %}
+            <td>
+              <span class="fw-bold">—</span>
+              <a href="{% url 'ver' gallo.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+            </td>
+          {% endif %}
+          <td>{{ gallo.color }}</td>
+          <td>{{ gallo.sexo }}</td>
+          <td>
+            {% if gallo.nombre_img %}
+            <img src="{{ gallo.nombre_img }}" alt="img{{ gallo.idGallo }}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav>
+    <ul class="pagination justify-content-center">
+      {% if participantes.has_previous %}
+      <li class="page-item">
+        <a class="page-link participantes-page-link" href="?page_participantes={{ participantes.previous_page_number }}">Anterior</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled">
+        <span class="page-link">Página {{ participantes.number }} de {{ participantes.paginator.num_pages }}</span>
+      </li>
+      {% if participantes.has_next %}
+      <li class="page-item">
+        <a class="page-link participantes-page-link" href="?page_participantes={{ participantes.next_page_number }}">Siguiente</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>

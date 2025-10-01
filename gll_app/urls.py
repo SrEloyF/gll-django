@@ -11,6 +11,8 @@ urlpatterns = [
     path('comprobarNroPLaca/', views.ajax_valida_placa, name='ajax_valida_placa'),
     path('gallo/<int:idGallo>/upload-archivo/', views.upload_archivo_adicional, name='upload_archivo_adicional'),
     path('archivo/<int:archivo_id>/delete/', views.delete_archivo_adicional, name='delete_archivo_adicional'),
+    path('ajax/padres/', views.padres_modal_content, name='padres_modal_content'),
+    path('ajax/madres/', views.madres_modal_content, name='madres_modal_content'),
 
     #encuentros
     path('encuentros/', views.listar_encuentros, name='listar_encuentros'),
@@ -19,6 +21,7 @@ urlpatterns = [
     path('encuentros/editar/<int:pk>/', views.encuentro_form, name='editar_encuentro'),
     path('encuentros/eliminar/<int:pk>/', views.eliminar_encuentro, name='eliminar_encuentro'),
     path('export-db/', views.export_db, name='export_db'),
+    path('ajax/participantes/', views.participantes_modal_content, name='participantes_modal_content'),
 
     #colores
     path('color', views.color_list, name='color_list'),

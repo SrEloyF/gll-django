@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F, Value
 from django.db.models.functions import Coalesce
 import mimetypes
+from django.template.loader import render_to_string
 
 def filtros(request):
     columna = request.GET.get('columna', '')
@@ -275,6 +276,40 @@ def delete_archivo_adicional(request, archivo_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+registros_por_pagina = 2
+
+def padres_modal_content(request):
+    page = request.GET.get('page_padres', 1)
+    buscar = request.GET.get('buscar')
+    placa_none = request.GET.get('placa_none')
+    queryset = Gallo.objects.filter(sexo='M').order_by('nroPlaca')
+
+    if buscar is not None:
+        queryset = queryset.filter(nroPlaca__nroPlaca__icontains=buscar)
+    if placa_none is not None:
+        queryset = queryset.filter(nroPlaca__isnull=True)
+
+    paginator = Paginator(queryset, registros_por_pagina)
+    padres = paginator.get_page(page)
+    html = render_to_string('gll_app/padres_modal_content.html', {'padres': padres})
+    return JsonResponse({'html': html})
+
+def madres_modal_content(request):
+    page = request.GET.get('page_madres', 1)
+    buscar = request.GET.get('buscar')
+    placa_none = request.GET.get('placa_none')
+    queryset = Gallo.objects.filter(sexo='H').order_by('nroPlaca')
+
+    if buscar is not None:
+        queryset = queryset.filter(nroPlaca__nroPlaca__icontains=buscar)
+    if placa_none is not None:
+        queryset = queryset.filter(nroPlaca__isnull=True)
+
+    paginator = Paginator(queryset, registros_por_pagina)
+    madres = paginator.get_page(page)
+    html = render_to_string('gll_app/madres_modal_content.html', {'madres': madres})
+    return JsonResponse({'html': html})
+
 def crear(request):
     if request.method == 'POST':
         form = GalloForm(request.POST, request.FILES)
@@ -329,16 +364,10 @@ def crear(request):
     else:
         form = GalloForm()
 
-    if form.instance and form.instance.nroPlaca:
-        gallos = Gallo.objects.exclude(nroPlaca=form.instance.nroPlaca).order_by(F('nroPlaca_id').asc(nulls_last=True))
-    else:
-        gallos = Gallo.objects.all().order_by(F('nroPlaca_id').asc(nulls_last=True))
-
     return render(
         request, 'formulario.html', 
         {
-            'form': form, 
-            'gallos': gallos
+            'form': form,
             }
         )
 
@@ -406,8 +435,6 @@ def editar(request, idGallo):
     else:
         form = GalloForm(instance=gallo)
 
-    gallos = Gallo.objects.exclude(idGallo=gallo.idGallo).order_by(F('nroPlaca_id').asc(nulls_last=True))
-
     placa_padre = obtener_placa_madre_padre( gallo.idGallo, 'padre')
     placa_madre = obtener_placa_madre_padre( gallo.idGallo, 'madre')
 
@@ -417,7 +444,6 @@ def editar(request, idGallo):
 
     contexto = {
         'form': form,
-        'gallos': gallos,
         'padre_sel': gallo.placaPadre_id,
         'madre_sel': gallo.placaMadre_id,
         'placa_padre': placa_padre,
@@ -458,6 +484,25 @@ def eliminar(request, idGallo):
     return redirect('index')
 
 #encuentros
+def participantes_modal_content(request):
+    page = request.GET.get('page_participantes', 1)
+    buscar = request.GET.get('buscar')
+    placa_none = request.GET.get('placa_none')
+    id_actual = request.GET.get('id_actual')
+
+    queryset = Gallo.objects.all().order_by('nroPlaca')
+    if id_actual:
+        queryset = queryset.exclude(idGallo=id_actual)
+    if buscar is not None:
+        queryset = queryset.filter(nroPlaca__nroPlaca__icontains=buscar)
+    if placa_none is not None:
+        queryset = queryset.filter(nroPlaca__isnull=True)
+
+    paginator = Paginator(queryset, registros_por_pagina)
+    participantes = paginator.get_page(page)
+    html = render_to_string('gll_app/participantes_modal_content.html', {'participantes': participantes})
+    return JsonResponse({'html': html})
+
 def crear_encuentro(request):
     if request.method == 'POST':
     

@@ -193,7 +193,7 @@
           <div class="col-12 col-md-4">
             <div class="form-floating position-relative">
               {{ form.condicionGallo }}
-              <label for="{{ form.condicionGallo.id_for_label }}">Condición del gallo luego del encuentro <span class="text-danger">*</span></label>
+              <label for="{{ form.condicionGallo.id_for_label }}">Condición luego del encuentro <span class="text-danger">*</span></label>
               
               <div class="position-absolute end-0 top-0 d-flex mt-2 me-2">
                 <div class="input-group-text">
@@ -412,45 +412,11 @@
           <i class="bi bi-info-circle me-2"></i>Haga clic en una fila para seleccionar un gallo.
         </div>
 
-        <div class="mb-3">
-          <input type="text" class="form-control" id="buscarPlaca" placeholder="Buscar por placa...">
+        <div id="participantes-modal-loader" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <div class="mt-2">Cargando resultados...</div>
         </div>
-
-        <div class="table-responsive modal-table-container" style="max-height: 400px; overflow-y: auto;">
-          <table class="table table-bordered table-hover" id="tablaGallos">
-            <thead class="table-light">
-              <tr>
-                <th><i class="bi bi-tag me-1"></i>Placa</th>
-                <th><i class="bi bi-palette me-1"></i>Color</th>
-                <th><i class="bi bi-gender-ambiguous me-1"></i>Sexo</th>
-                <th><i class="bi bi-image me-1"></i>Imagen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for gallo in gallos %}
-              <tr class="gallo-row" data-placa="{{ gallo.nroPlaca|default:'—' }}" data-idgallo="{{ gallo.idGallo }}">
-                {% if gallo.nroPlaca %}
-                  <td>{{ gallo.nroPlaca }}
-                    <a href="{% url 'ver' gallo.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                  </td>
-                {% else %}
-                  <td>—
-                    <a href="{% url 'ver' gallo.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                  </td>
-                {% endif %}
-                <td>{{ gallo.color }}</td>
-                <td>{{ gallo.get_sexo_display }}</td>
-                {% if gallo.nombre_img %}
-                  <td>
-                    <img src="{{ gallo.nombre_img }}" alt="img{{gallo.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
-                  </td>
-                {% else %}
-                  <td></td>
-                {% endif %}
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div id="participantes-modal-content">
         </div>
       </div>
       <div class="modal-footer">
@@ -493,6 +459,38 @@
     </div>
   </div>
 </div>
+
+<div id="upload-overlay" style="display:none;">
+  <div id="upload-overlay-backdrop"></div>
+  <div id="upload-overlay-card" role="status" aria-live="polite">
+    <div id="upload-overlay-spinner" aria-hidden="true"></div>
+    <div id="upload-overlay-text">
+      <strong>Guardando datos, no cierre esta pestaña</strong>
+      <div id="upload-overlay-subtext">Subiendo archivos... por favor espere</div>
+    </div>
+  </div>
+</div>
+<style>
+  #upload-overlay { position: fixed; inset: 0; z-index: 2000; font-family: inherit; }
+  #upload-overlay-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.55); }
+  #upload-overlay-card {
+    position: absolute;
+    left: 50%; top: 45%;
+    transform: translate(-50%, -50%);
+    background: #fff; color: #000; padding: 20px; border-radius: 8px;
+    width: 320px; max-width: 90%; display:flex; gap:12px; align-items:center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+  #upload-overlay-spinner {
+    width:48px; height:48px; border-radius:50%;
+    border:5px solid rgba(0,0,0,0.12); border-top-color: #0d6efd;
+    animation: spin 1s linear infinite;
+    flex: 0 0 48px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #upload-overlay-text { flex:1; font-size:0.95rem; }
+  #upload-overlay-subtext { font-size:0.85rem; color:#555; margin-top:6px; }
+</style>
 
 <script>
   
@@ -553,66 +551,65 @@
       limpiarYBloquearInputs(inputsABloquear);
     }
 
-
-function añadirGalpon(selectId) {
-  Swal.fire({
-    title: 'Registrar nuevo galpón',
-    html:
-      '<input id="swal-nombre" class="swal2-input" placeholder="Nombre del galpón">',
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: 'Registrar',
-    cancelButtonText: 'Cancelar',
-    preConfirm: () => {
-      const nombre = document.getElementById('swal-nombre').value.trim();
-      if (!nombre) {
-        Swal.showValidationMessage('El nombre es obligatorio');
-      }
-      return { nombre };
-    }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const { nombre } = result.value;
-
-      fetch("{% url 'galpon_create_ajax' %}", {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}',
-        },
-        body: new URLSearchParams({
-          'nombre': nombre
-        })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const selectGalpon = document.getElementById(selectId);
-            const otroSelectId = (selectId === 'id_galpon1') ? 'id_galpon2' : 'id_galpon1';
-            const otroSelect = document.getElementById(otroSelectId);
-
-            const nuevaOpcionGalpon = document.createElement('option');
-            nuevaOpcionGalpon.value = data.id;
-            nuevaOpcionGalpon.textContent = `${data.nombre}`;
-
-            const nuevaOpcionOtroGalpon = nuevaOpcionGalpon.cloneNode(true);
-
-            selectGalpon.appendChild(nuevaOpcionGalpon);
-            otroSelect.appendChild(nuevaOpcionOtroGalpon);
-
-            nuevaOpcionGalpon.selected = true;
-
-            Swal.fire('¡Éxito!', 'Galpón registrado correctamente.', 'success');
-          } else {
-            Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+    function añadirGalpon(selectId) {
+      Swal.fire({
+        title: 'Registrar nuevo galpón',
+        html:
+          '<input id="swal-nombre" class="swal2-input" placeholder="Nombre del galpón">',
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Registrar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          const nombre = document.getElementById('swal-nombre').value.trim();
+          if (!nombre) {
+            Swal.showValidationMessage('El nombre es obligatorio');
           }
-        })
-        .catch(error => {
-          console.error(error);
-          Swal.fire('Error', 'Error en la petición.', 'error');
-        });
+          return { nombre };
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const { nombre } = result.value;
+
+          fetch("{% url 'galpon_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: new URLSearchParams({
+              'nombre': nombre
+            })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const selectGalpon = document.getElementById(selectId);
+                const otroSelectId = (selectId === 'id_galpon1') ? 'id_galpon2' : 'id_galpon1';
+                const otroSelect = document.getElementById(otroSelectId);
+
+                const nuevaOpcionGalpon = document.createElement('option');
+                nuevaOpcionGalpon.value = data.id;
+                nuevaOpcionGalpon.textContent = `${data.nombre}`;
+
+                const nuevaOpcionOtroGalpon = nuevaOpcionGalpon.cloneNode(true);
+
+                selectGalpon.appendChild(nuevaOpcionGalpon);
+                otroSelect.appendChild(nuevaOpcionOtroGalpon);
+
+                nuevaOpcionGalpon.selected = true;
+
+                Swal.fire('¡Éxito!', 'Galpón registrado correctamente.', 'success');
+              } else {
+                Swal.fire('Error', data.error || 'No se pudo registrar.', 'error');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              Swal.fire('Error', 'Error en la petición.', 'error');
+            });
+        }
+      });
     }
-  });
-}
 
     function añadirEstado(selectId) {
       Swal.fire({
@@ -694,7 +691,7 @@ function añadirGalpon(selectId) {
     const input = document.getElementById(inputId);
     input.addEventListener('keydown', (evt) => {
       if (["e", "E", "+", "-"].includes(evt.key)) {
-        evt.preventDefault();
+        evt.preventDefault(); //para evitar escribir esos caracteres
       }
     });
   });
@@ -959,9 +956,8 @@ function añadirGalpon(selectId) {
 
   });
 
-
-
   // Función de búsqueda
+  /*
   document.getElementById('buscarPlaca').addEventListener('input', function (e) {
     const searchTerm = e.target.value.toLowerCase();
 
@@ -977,10 +973,11 @@ function añadirGalpon(selectId) {
       document.getElementById('confirmarGallo').disabled = true;
     }
   });
+  */
 
   // Resetear búsqueda al abrir modal
   document.getElementById('modalParticipantes').addEventListener('show.bs.modal', function () {
-    document.getElementById('buscarPlaca').value = '';
+    //document.getElementById('buscarPlaca').value = '';
     document.querySelectorAll('#tablaGallos .gallo-row').forEach(row => row.style.display = '');
   });
 
@@ -1006,11 +1003,10 @@ function añadirGalpon(selectId) {
   // Confirmar selección de gallo
   document.getElementById("confirmarGallo").addEventListener("click", function () {
     const cont = document.getElementById("galloSeleccionado");
-
     if (galloSeleccionadoPlaca) {
       cont.innerHTML = '';
-      cont.innerHTML = `<span class="badge bg-success p-2"><i class="bi bi-tag-fill me-1"></i>Placa ${galloSeleccionadoPlaca}</span>`; //setear placa
-      document.getElementById("galloHidden").value = idGalloSeleccionado;//setear id
+      cont.innerHTML = `<span class="badge bg-success p-2"><i class="bi bi-tag-fill me-1"></i>Placa ${galloSeleccionadoPlaca}</span>`;
+      document.getElementById("galloHidden").value = idGalloSeleccionado;
       var modalEl = document.getElementById('modalParticipantes');
       var modal = bootstrap.Modal.getInstance(modalEl);
       modal.hide();
@@ -1018,53 +1014,225 @@ function añadirGalpon(selectId) {
   });
 
   document.getElementById('modalParticipantes').addEventListener('show.bs.modal', function () {
-    document.querySelectorAll('#tablaGallos .gallo-row').forEach(r => {
+    // Limpiar selección previa
+    document.querySelectorAll('#participantes-modal-content tr').forEach(r => {
       r.classList.remove('table-primary');
     });
 
     document.getElementById('confirmarGallo').disabled = true;
 
+    // Restaurar selección previa si existe
     const galloPlaca = document.getElementById("galloHidden").value;
     if (galloPlaca) {
-      const filaPrevia = document.querySelector(`#tablaGallos .gallo-row[data-placa="${galloPlaca}"]`);
+      const filaPrevia = document.querySelector(`#participantes-modal-content tr[data-idgallo="${galloPlaca}"]`);
       if (filaPrevia) {
         filaPrevia.classList.add('table-primary');
         filaSeleccionada = filaPrevia;
-        galloSeleccionadoPlaca = galloPlaca;
+        galloSeleccionadoPlaca = filaPrevia.querySelector('.seleccionar-participante').dataset.placa;
+        idGalloSeleccionado = galloPlaca;
         document.getElementById('confirmarGallo').disabled = false;
       }
     }
   });
 
-  document.getElementById("encuentroForm").addEventListener("submit", function (e) {
-    const galloPlaca = document.getElementById("galloHidden").value;
 
-    if (!galloPlaca) {
-      e.preventDefault();
-      Swal.fire({
-        icon: 'warning',
-        title: 'Atención',
-        text: 'Debe seleccionar un gallo participante',
-        confirmButtonColor: '#0d6efd'
+
+
+
+
+
+// Variable para controlar si el formulario se está enviando
+let formSubmitting = false;
+
+document.getElementById("encuentroForm").addEventListener("submit", function (e) {
+  const galloPlaca = document.getElementById("galloHidden").value;
+
+  if (!galloPlaca) {
+    e.preventDefault();
+    Swal.fire({
+      icon: 'warning',
+      title: 'Atención',
+      text: 'Debe seleccionar un gallo participante',
+      confirmButtonColor: '#0d6efd'
+    });
+    return;
+  }
+
+  // Si pasa todas las validaciones, mostrar overlay y bloquear cierre
+  if (this.checkValidity()) {
+    // Mostrar overlay
+    document.getElementById("upload-overlay").style.display = "block";
+    
+    // Activar bloqueo de cierre DESPUÉS de un pequeño delay
+    // Esto permite que el submit se complete antes de activar beforeunload
+    setTimeout(function() {
+      formSubmitting = true;
+    }, 100);
+  }
+});
+
+(function () {
+  'use strict';
+
+  var forms = document.querySelectorAll('.needs-validation');
+
+  Array.prototype.slice.call(forms).forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity() && document.getElementById("galloHidden").value) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})();
+
+// Bloquear el cierre de pestaña mientras se envía el formulario
+window.addEventListener('beforeunload', function (e) {
+  if (formSubmitting) {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
+
+// Ocultar overlay si la página se recarga por algún motivo (navegación atrás, etc.)
+window.addEventListener('pageshow', function(event) {
+  formSubmitting = false;
+  document.getElementById("upload-overlay").style.display = "none";
+});
+
+// ...existing code...
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById("upload-overlay").style.display = "none";
+});
+window.addEventListener('load', function() {
+  document.getElementById("upload-overlay").style.display = "none";
+});
+// ...existing code...
+
+
+
+
+
+
+
+  // Luego de que cargue el DOM
+  document.addEventListener('DOMContentLoaded', function () {
+    function cargarParticipantesModal(url) {
+      document.getElementById('participantes-modal-loader').classList.remove('d-none');
+      document.getElementById('participantes-modal-content').classList.add('d-none');
+      fetch(url, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('participantes-modal-content').innerHTML = data.html;
+        attachParticipantesPaginationListeners();
+        attachParticipanteSelectListeners();
+        setupParticipantesFilter();
+      })
+      .finally(() => {
+        document.getElementById('participantes-modal-loader').classList.add('d-none');
+        document.getElementById('participantes-modal-content').classList.remove('d-none');
       });
     }
-  });
 
-  (function () {
-    'use strict';
+    function attachParticipantesPaginationListeners() {
+      document.querySelectorAll('#participantes-modal-content .participantes-page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault(); // no se redirecciona a otra página, se actualizan los datos del modal
+          cargarParticipantesModal('/ajax/participantes/' + this.getAttribute('href'));
+        });
+      });
+    }
 
-    var forms = document.querySelectorAll('.needs-validation');
+    function attachParticipanteSelectListeners() {
+      document.querySelectorAll('#participantes-modal-content .gallo-row').forEach(row => {
+        row.onclick = function () {
+          // Limpiar selección previa
+          document.querySelectorAll('#participantes-modal-content .gallo-row').forEach(r => {
+            r.classList.remove('table-primary');
+          });
 
-    Array.prototype.slice.call(forms).forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        if (!form.checkValidity() && document.getElementById("galloHidden").value) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }, false);
+          // Marcar la fila actual
+          this.classList.add('table-primary');
+          filaSeleccionada = this;
+          galloSeleccionadoPlaca = this.dataset.placa;
+          idGalloSeleccionado = this.dataset.idgallo;
+          document.getElementById('confirmarGallo').disabled = false;
+        };
+      });
+    }
+
+    function setupParticipantesFilter() {
+      const input = document.getElementById('buscarPlacaParticipante');
+      const btnNone = document.getElementById('mostrarPlacaNoneParticipante');
+      const noEncontradoDiv = document.getElementById('participante-no-encontrado');
+      const buscarEnBD = document.getElementById('buscarParticipanteEnBD');
+      const rows = document.querySelectorAll('#participantes-modal-content table tbody tr');
+
+      if (!input) return;
+      input.value = '';
+
+      input.addEventListener('input', function () {
+        let found = false;
+        rows.forEach(row => {
+          const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+          const show = placa.includes(input.value.toLowerCase());
+          row.style.display = show ? '' : 'none';
+          if (show) found = true;
+        });
+        noEncontradoDiv.classList.toggle('d-none', found || !input.value);
+      });
+
+      buscarEnBD.addEventListener('click', function () {
+        const valor = input.value;
+        document.getElementById('participantes-modal-loader').classList.remove('d-none');
+        document.getElementById('participantes-modal-content').classList.add('d-none');
+        fetch(`/ajax/participantes/?buscar=${encodeURIComponent(valor)}`, {
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('participantes-modal-content').innerHTML = data.html;
+          attachParticipantesPaginationListeners();
+          attachParticipanteSelectListeners();
+          setupParticipantesFilter();
+        })
+        .finally(() => {
+          document.getElementById('participantes-modal-loader').classList.add('d-none');
+          document.getElementById('participantes-modal-content').classList.remove('d-none');
+        });
+      });
+
+      btnNone.addEventListener('click', function () {
+        document.getElementById('participantes-modal-loader').classList.remove('d-none');
+        document.getElementById('participantes-modal-content').classList.add('d-none');
+        fetch(`/ajax/participantes/?placa_none=1`, {
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('participantes-modal-content').innerHTML = data.html;
+          attachParticipantesPaginationListeners();
+          attachParticipanteSelectListeners();
+          setupParticipantesFilter();
+        })
+        .finally(() => {
+          document.getElementById('participantes-modal-loader').classList.add('d-none');
+          document.getElementById('participantes-modal-content').classList.remove('d-none');
+        });
+      });
+    }
+
+    // Inicializa cuando se abre el modal
+    document.getElementById('modalParticipantes').addEventListener('show.bs.modal', function () {
+      cargarParticipantesModal('/ajax/participantes/?page_participantes=1');
     });
-  })();
+
+  });
+  
 </script>
 
 {% endblock %}

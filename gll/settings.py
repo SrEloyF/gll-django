@@ -14,6 +14,18 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+LOGIN_URL = '/accounts/login/'          # a dónde redirigir si no está autenticado
+LOGIN_REDIRECT_URL = '/'      # a dónde ir al hacer login
+LOGOUT_REDIRECT_URL = '/accounts/login/'   # o /accounts/login/ o /dashboard/
+
+#endpoints públicos
+LOGIN_EXEMPT_URLS = [
+    r'^accounts/login/$',
+    r'^accounts/logout/$',
+    r'^admin/',        # admin
+    r'^static/',       # estáticos
+]
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,7 +48,7 @@ ALLOWED_HOSTS = ['feloy.pythonanywhere.com', 'gll-service.onrender.com','127.0.0
 
 INSTALLED_APPS = [
     'gll_app',
-    'dbbackup',
+    #'dbbackup',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gll_app.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'gll.urls'

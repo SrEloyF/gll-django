@@ -1,0 +1,67 @@
+<div id="madres-modal-content">
+  <div class="input-group mb-2">
+    <input type="text" class="form-control" id="buscarPlacaMadre" placeholder="Buscar por placa en esta página">
+    <button class="btn btn-outline-secondary" type="button" id="mostrarPlacaNoneMadre">Placa None</button>
+  </div>
+  <div id="madre-no-encontrada" class="d-none mb-2">
+    <button class="btn btn-warning w-100" type="button" id="buscarMadreEnBD">Buscar en toda la BD</button>
+  </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-striped">
+        <thead class="table-light">
+          <tr>
+            <th><i class="bi bi-tag me-1"></i>Placa</th>
+            <th><i class="bi bi-palette me-1"></i>Color</th>
+            <th><i class="bi bi-image me-1"></i>Imagen</th>
+            <th class="text-end">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for madre in madres %}
+          <tr>
+            {% if madre.nroPlaca %}
+              <td>
+                <span class="fw-bold">{{ madre.nroPlaca }}</span>
+                <a href="{% url 'ver' madre.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+              </td>
+            {% else %}
+              <td>
+                <span class="fw-bold">—</span>
+                <a href="{% url 'ver' madre.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
+              </td>
+            {% endif %}
+            <td>{{ madre.color }}</td>
+            <td>
+              {% if madre.nombre_img %}
+              <img src="{{ madre.nombre_img }}" alt="img{{ madre.idGallo }}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-success seleccionar-madre"
+                      data-placa="{{ madre.nroPlaca }}" data-idgallo="{{ madre.idGallo }}" data-bs-dismiss="modal">
+                <i class="bi bi-check-circle me-1"></i> Seleccionar
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <nav>
+      <ul class="pagination justify-content-center">
+        {% if madres.has_previous %}
+        <li class="page-item">
+          <a class="page-link madres-page-link" href="?page_madres={{ madres.previous_page_number }}">Anterior</a>
+        </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">Página {{ madres.number }} de {{ madres.paginator.num_pages }}</span>
+        </li>
+        {% if madres.has_next %}
+        <li class="page-item">
+          <a class="page-link madres-page-link" href="?page_madres={{ madres.next_page_number }}">Siguiente</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>

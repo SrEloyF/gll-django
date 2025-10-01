@@ -333,6 +333,9 @@
         <div class="card mt-4 mb-4 border-primary-subtle">
           <div class="card-header bg-primary-subtle">
             <h5 class="card-title mb-0">Genealogía</h5>
+            <div class="form-text">
+              No puedes seleccionar al mismo gallo como padre o madre.
+            </div>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -426,65 +429,13 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-
-        <div class="mb-3">
-          <input type="text" class="form-control" id="buscarPlacaPadre" placeholder="Buscar por placa...">
+        <div id="padres-modal-loader" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <div class="mt-2">Cargando resultados...</div>
         </div>
-
-        <div class="table-responsive">
-          <table class="table table-hover table-striped">
-            <thead class="table-light">
-              <tr>
-                <th><i class="bi bi-tag me-1"></i>Placa</th>
-                <th><i class="bi bi-palette me-1"></i>Color</th>
-                <th><i class="bi bi-image me-1"></i>Imagen</th>
-                <th class="text-end">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for g in gallos %}
-              {% if g.sexo == 'M' %}
-              <tr>
-                {% if g.nroPlaca %}
-                  <td>
-                    <span class="fw-bold">{{ g.nroPlaca }}</span>
-                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                  </td>
-                {% else %}
-                  <td>
-                    <span class="fw-bold">—</span>
-                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                  </td>
-                {% endif %}
-                <td>{{ g.color }}</td>
-                {% if g.nombre_img %}
-                  <td>
-                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
-                  </td>
-                {% else %}
-                  <td></td>
-                {% endif %}
-                <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-success seleccionar-padre" data-placa="{{ g.nroPlaca|default:'—' }}"
-                    data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
-                    <i class="bi bi-check-circle me-1"></i> Seleccionar
-                  </button>
-                </td>
-              </tr>
-              {% endif %}
-              {% empty %}
-              <tr>
-                <td colspan="3" class="text-center py-3 text-muted">
-                  <i class="bi bi-exclamation-circle me-2"></i>No hay gallos macho disponibles.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div id="padres-modal-content">
+          <!-- Aquí se cargará dinámicamente el contenido AJAX -->
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -499,65 +450,13 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-
-        <div class="mb-3">
-          <input type="text" class="form-control" id="buscarPlacaMadre" placeholder="Buscar por placa...">
+        <div id="madres-modal-loader" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <div class="mt-2">Cargando resultados...</div>
         </div>
-
-        <div class="table-responsive">
-          <table class="table table-hover table-striped">
-            <thead class="table-light">
-              <tr>
-                <th><i class="bi bi-tag me-1"></i>Placa</th>
-                <th><i class="bi bi-palette me-1"></i>Color</th>
-                <th><i class="bi bi-image me-1"></i>Imagen</th>
-                <th class="text-end">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for g in gallos %}
-              {% if g.sexo == 'H' %}
-              <tr>
-                {% if g.nroPlaca %}
-                  <td>
-                    <span class="fw-bold">{{ g.nroPlaca }}</span>
-                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                  </td>
-                {% else %}
-                  <td>
-                    <span class="fw-bold">—</span>
-                    <a href="{% url 'ver' g.idGallo %}"><i class="bi bi-box-arrow-up-right"></i></a>
-                </td>
-                {% endif %}
-                <td>{{ g.color }}</td>
-                {% if g.nombre_img %}
-                  <td>
-                    <img src="{{ g.nombre_img }}" alt="img{{g.idGallo}}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
-                  </td>
-                {% else %}
-                  <td></td>
-                {% endif %}
-                <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-danger seleccionar-madre" data-placa="{{ g.nroPlaca|default:'—' }}"
-                    data-idgallo="{{ g.idGallo }}" data-bs-dismiss="modal">
-                    <i class="bi bi-check-circle me-1"></i> Seleccionar
-                  </button>
-                </td>
-              </tr>
-              {% endif %}
-              {% empty %}
-              <tr>
-                <td colspan="3" class="text-center py-3 text-muted">
-                  <i class="bi bi-exclamation-circle me-2"></i>No hay gallinas disponibles.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div id="madres-modal-content">
+          <!-- Aquí se cargará dinámicamente el contenido AJAX -->
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -592,7 +491,6 @@
   </div>
 </div>
 
-<!-- OVERLAY GLOBAL (coloque justo antes del cierre </body>) -->
 <div id="upload-overlay" style="display:none;">
   <div id="upload-overlay-backdrop"></div>
   <div id="upload-overlay-card" role="status" aria-live="polite">
@@ -605,7 +503,6 @@
 </div>
 
 <style>
-  /* Backdrop y tarjeta centrada */
   #upload-overlay { position: fixed; inset: 0; z-index: 2000; font-family: inherit; }
   #upload-overlay-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.55); }
   #upload-overlay-card {
@@ -623,12 +520,9 @@
     flex: 0 0 48px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   #upload-overlay-text { flex:1; font-size:0.95rem; }
   #upload-overlay-subtext { font-size:0.85rem; color:#555; margin-top:6px; }
-
 </style>
-
 
 <script>
 
@@ -1046,7 +940,7 @@
     });
 
   });
-
+/*
   // Búsqueda en el modal de Padre
   document.getElementById('buscarPlacaPadre').addEventListener('input', function (e) {
     const searchTerm = e.target.value.toLowerCase();
@@ -1073,7 +967,7 @@
   document.getElementById('modalMadre').addEventListener('show.bs.modal', function () {
     document.getElementById('buscarPlacaMadre').value = '';
     document.querySelectorAll('#modalMadre table tbody tr').forEach(row => row.style.display = '');
-  });
+  });*/
 
   function abrirModalBuscarSelect(selectId, titulo, columna) {
     const filas = 8;
@@ -1192,6 +1086,7 @@
   });
 
   // Selección de padre
+  function attachPadreSelectListeners() {
   document.querySelectorAll('.seleccionar-padre').forEach(btn => {
     btn.onclick = () => {
       const placa = btn.dataset.placa || '—';
@@ -1204,8 +1099,10 @@
       botonEliminarPadre.classList.remove('d-none');
     };
   });
+}
 
   // Selección de madre
+  function attachMadreSelectListeners() {
   document.querySelectorAll('.seleccionar-madre').forEach(btn => {
     btn.onclick = () => {
       const placa = btn.dataset.placa || '—';
@@ -1218,6 +1115,7 @@
       botonEliminarMadre.classList.remove('d-none');
     };
   });
+}
 
   let archivosParaSubir = []; // tu array de File
   let storedFormData = null;
@@ -1581,7 +1479,197 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+  // Función para cargar contenido AJAX en el modal de padres
+  function cargarPadresModal(url) {
+    document.getElementById('padres-modal-loader').classList.remove('d-none');
+    document.getElementById('padres-modal-content').classList.add('d-none');
+    fetch(url, {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('padres-modal-content').innerHTML = data.html;
+      attachPadresPaginationListeners(); // Reasignar listeners después de actualizar el contenido
+      attachPadreSelectListeners(); // Reasignar listeners a los botones seleccionar
+      setupPadresFilter();
+    })
+    .catch(error => {
+      console.error('Error al cargar padres:', error);
+    })
+    .finally(() => {
+      document.getElementById('padres-modal-loader').classList.add('d-none');
+      document.getElementById('padres-modal-content').classList.remove('d-none');
+    });
+  }
 
+  function attachPadresPaginationListeners() {
+    document.querySelectorAll('#padres-modal-content .padres-page-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        cargarPadresModal('/ajax/padres/' + this.getAttribute('href'));
+      });
+    });
+  }
+
+
+  // Igual para madres
+  function cargarMadresModal(url) {
+    document.getElementById('madres-modal-loader').classList.remove('d-none');
+    document.getElementById('madres-modal-content').classList.add('d-none');
+    fetch(url, {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('madres-modal-content').innerHTML = data.html;
+      attachMadresPaginationListeners();
+      attachMadreSelectListeners();
+      setupMadresFilter();
+    })
+    .catch(error => {
+      console.error('Error al cargar madres:', error);
+    })
+    .finally(() => {
+      document.getElementById('madres-modal-loader').classList.add('d-none');
+      document.getElementById('madres-modal-content').classList.remove('d-none');
+    });
+  }
+
+  function attachMadresPaginationListeners() {
+    document.querySelectorAll('#madres-modal-content .madres-page-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        cargarMadresModal('/ajax/madres/' + this.getAttribute('href'));
+      });
+    });
+  }
+
+  // Inicializar listeners cuando se abre el modal
+  document.getElementById('modalPadre').addEventListener('show.bs.modal', function () {
+    cargarPadresModal('/ajax/padres/?page_padres=1');
+  });
+  document.getElementById('modalMadre').addEventListener('show.bs.modal', function () {
+    cargarMadresModal('/ajax/madres/?page_madres=1');
+  });
+
+  function setupPadresFilter() {
+    const input = document.getElementById('buscarPlacaPadre');
+    const btnNone = document.getElementById('mostrarPlacaNonePadre');
+    const noEncontradoDiv = document.getElementById('padre-no-encontrado');
+    const buscarEnBD = document.getElementById('buscarPadreEnBD');
+    const rows = document.querySelectorAll('#padres-modal-content table tbody tr');
+
+    if (!input) return; // Si el modal aún no se cargó
+    input.value = '';
+
+    input.addEventListener('input', function () {
+      let found = false;
+      rows.forEach(row => {
+        const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+        const show = placa.includes(input.value.toLowerCase());
+        row.style.display = show ? '' : 'none';
+        if (show) found = true;
+      });
+      noEncontradoDiv.classList.toggle('d-none', found || !input.value);
+    });
+
+    buscarEnBD.addEventListener('click', function () {
+      const valor = input.value;
+      document.getElementById('padres-modal-loader').classList.remove('d-none');
+      document.getElementById('padres-modal-content').classList.add('d-none');
+      fetch(`/ajax/padres/?buscar=${encodeURIComponent(valor)}`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('padres-modal-content').innerHTML = data.html;
+        attachPadresPaginationListeners();
+        attachPadreSelectListeners();
+      })
+      .catch(error => {
+        console.error('Error al buscar padres:', error);
+      })
+      .finally(() => {
+        document.getElementById('padres-modal-loader').classList.add('d-none');
+        document.getElementById('padres-modal-content').classList.remove('d-none');
+      });
+    });
+  }
+
+  function setupMadresFilter() {
+    const input = document.getElementById('buscarPlacaMadre');
+    const btnNone = document.getElementById('mostrarPlacaNoneMadre');
+    const noEncontradoDiv = document.getElementById('madre-no-encontrada');
+    const buscarEnBD = document.getElementById('buscarMadreEnBD');
+    const rows = document.querySelectorAll('#madres-modal-content table tbody tr');
+
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+      let found = false;
+      rows.forEach(row => {
+        const placa = row.querySelector('td:first-child').textContent.toLowerCase();
+        const show = placa.includes(input.value.toLowerCase());
+        row.style.display = show ? '' : 'none';
+        if (show) found = true;
+      });
+      noEncontradoDiv.classList.toggle('d-none', found || !input.value);
+    });
+
+    buscarEnBD.addEventListener('click', function () {
+      const valor = input.value;
+      document.getElementById('madres-modal-loader').classList.remove('d-none');
+      document.getElementById('madres-modal-content').classList.add('d-none');
+      fetch(`/ajax/madres/?buscar=${encodeURIComponent(valor)}`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('madres-modal-content').innerHTML = data.html;
+        attachMadresPaginationListeners();
+        attachMadreSelectListeners();
+        setupMadresFilter();
+      })
+      .finally(() => {
+        document.getElementById('madres-modal-loader').classList.add('d-none');
+        document.getElementById('madres-modal-content').classList.remove('d-none');
+      });
+    });
+  }
+
+  // Si el contenido inicial ya está cargado, asignar listeners
+  attachPadresPaginationListeners();
+  attachPadreSelectListeners();
+  attachMadresPaginationListeners();
+  attachMadreSelectListeners();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('encuentroForm');
+  function showOverlay() {
+    document.getElementById('upload-overlay').style.display = 'block';
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+    disableFormControls(true);
+  }
+  function hideOverlay() {
+    document.getElementById('upload-overlay').style.display = 'none';
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    disableFormControls(false);
+  }
+  function beforeUnloadHandler(e) {
+    const confirmationMessage = 'Guardando datos, si sale la subida se cancelará.';
+    e.returnValue = confirmationMessage;
+    return confirmationMessage;
+  }
+  function disableFormControls(disable) {
+    const controls = form.querySelectorAll('input, button, select, textarea');
+    controls.forEach(c => c.disabled = disable);
+  }
+  form.addEventListener('submit', function () {
+    showOverlay();
+  });
+});
 
 </script>
 {% endblock %}
