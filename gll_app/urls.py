@@ -59,4 +59,8 @@ urlpatterns = [
     path('peso/nuevo/ajax/', views.peso_create_ajax, name='peso_create_ajax'),
 
     path('filtros/', views.filtros, name='filtros_gallos'),
+
+    path('upload-archivo-adicional/<int:idGallo>/', views.upload_archivo_adicional, name='upload_archivo_adicional'),
+    path('delete-archivo-adicional/<int:archivo_id>/', views.delete_archivo_adicional, name='delete_archivo_adicional'),
+    path('get-presigned-put/', views.get_presigned_put, name='get_presigned_put'),
 ]

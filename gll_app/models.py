@@ -36,13 +36,11 @@ R2_URL_BASE = os.getenv('R2_URL_BASE')
 class CloudflareR2Field(models.CharField):
     def __init__(self, folder=None, *args, **kwargs):
         self.folder = folder
-        kwargs['max_length'] = 500
+        kwargs['max_length'] = 5000
         super().__init__(*args, **kwargs)
 
     def contribute_to_class(self, cls, name, **kwargs):
-        # Registrar el nombre del atributo
         super().contribute_to_class(cls, name, **kwargs)
-        # Conectar post_delete para eliminar del R2 cuando se borre la instancia
         post_delete.connect(self._post_delete, sender=cls, weak=False)
 
     def _post_delete(self, sender, instance, **kwargs):
@@ -87,10 +85,7 @@ class CloudflareR2Field(models.CharField):
          - elimina el antiguo archivo si corresponde (y no está referenciado por otra fila),
          - si el campo se vacía, borra el antiguo.
         """
-        # Obtener valor actualmente asignado en la instancia (puede ser key o URL)
         current_value = getattr(model_instance, self.attname)
-
-        # Obtener el valor antiguo directamente de la base de datos (si existe)
         old_db_value = None
         if getattr(model_instance, 'pk', None):
             try:
@@ -101,7 +96,6 @@ class CloudflareR2Field(models.CharField):
 
         old_key = self._extract_key(old_db_value)
 
-        # Obtener request y archivo subido (si existe)
         req = getattr(model_instance, '_request', None)
         uploaded_file = None
         if req is not None:
@@ -112,20 +106,16 @@ class CloudflareR2Field(models.CharField):
                     uploaded = uploaded_list[0]
             uploaded_file = uploaded
 
-        # Caso: el usuario limpió el campo (ej. '') -> borrar antiguo si existe
         if not uploaded_file and (current_value in [None, ""]):
             if old_key:
-                # comprobar si otra fila usa la misma referencia antes de borrar
                 other_refs = model_instance.__class__._default_manager.filter(**{self.attname: old_db_value}).exclude(pk=model_instance.pk).exists()
                 if not other_refs:
                     self._delete_key_from_r2(old_key)
                 else:
                     print(f"DEBUG - No se borra {old_key}: está referenciada por otra fila.")
-            # almacenar vacío en DB
             model_instance.__dict__[self.attname] = ""
             return ""
 
-        # Si hay archivo subido, proceder a subirlo (reemplazo)
         if uploaded_file and hasattr(uploaded_file, 'read'):
             try:
                 print(f"DEBUG - Tamaño del archivo recibido: {uploaded_file.size / 1024:.2f} KB")
@@ -148,14 +138,11 @@ class CloudflareR2Field(models.CharField):
                 content_type = getattr(uploaded_file, 'content_type', 'application/octet-stream')
                 s3.upload_fileobj(uploaded_file, R2_BUCKET, key, ExtraArgs={"ACL": "public-read", "ContentType": content_type})
 
-                # almacenar la key en la instancia (para guardar en DB)
                 model_instance.__dict__[self.attname] = key
 
                 print(f"DEBUG - Uploaded to R2, key: {key}")
 
-                # borrar antiguo si existe y no está referenciado por otra fila
                 if old_key and old_key != key:
-                    # comparamos el valor tal cual que vive en la DB (old_db_value)
                     other_refs = model_instance.__class__._default_manager.filter(**{self.attname: old_db_value}).exclude(pk=model_instance.pk).exists()
                     if not other_refs:
                         self._delete_key_from_r2(old_key)
@@ -171,13 +158,25 @@ class CloudflareR2Field(models.CharField):
                 print(f"DEBUG - Exception occurred: {str(e)}")
                 raise
 
-        # Si llegamos aquí sin archivo subido, devolver el valor actual (puede ser URL o key)
-        # Normalmente Django llamará a get_prep_value después para guardar la representación correcta.
+        # Nueva condición para keys pre-subidas (client-side): Guardar y borrar old si aplica
+        if not uploaded_file and current_value and not current_value.startswith('http') and current_value != "":
+            print("Se llegó al nuevo if")
+            new_key = current_value  # La key pre-subida
+            model_instance.__dict__[self.attname] = new_key
+            print(f"DEBUG - Usando key pre-subida: {new_key}")
+
+            # Agregado: Borrar la old_key si es diferente y no tiene refs
+            if old_key and old_key != new_key:
+                other_refs = model_instance.__class__._default_manager.filter(**{self.attname: old_db_value}).exclude(pk=model_instance.pk).exists()
+                if not other_refs:
+                    self._delete_key_from_r2(old_key)
+                else:
+                    print(f"DEBUG - No se borra {old_key}: está referenciada por otra fila.")
+
+            return new_key
+        
         return current_value
 
-    # __get__, __set__, to_python, from_db_value, get_prep_value, delete_from_r2
-    # puedes mantener las versiones que ya tenías; aquí solo debes asegurarte de que
-    # get_prep_value guarde la key (no la URL) y __get__ construya la URL pública.
     def __get__(self, instance, owner):
         if instance is None:
             return self
@@ -215,7 +214,6 @@ class CloudflareR2Field(models.CharField):
     def delete_from_r2(self, instance):
         """Método público que borra la key actual asociada a una instancia."""
         raw_value = instance.__dict__.get(self.attname) or getattr(instance, self.attname, None)
-        # extraer key si viene con URL
         key = self._extract_key(raw_value)
         if key:
             self._delete_key_from_r2(key)

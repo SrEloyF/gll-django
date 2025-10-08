@@ -467,9 +467,12 @@
     <div id="upload-overlay-text">
       <strong>Guardando datos, no cierre esta pestaña</strong>
       <div id="upload-overlay-subtext">Subiendo archivos... por favor espere</div>
+      <progress id="progress-bar" max="100"></progress>
+      <p id="progress-text">0%</p>
     </div>
   </div>
 </div>
+
 <style>
   #upload-overlay { position: fixed; inset: 0; z-index: 2000; font-family: inherit; }
   #upload-overlay-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.55); }
@@ -491,6 +494,9 @@
   #upload-overlay-text { flex:1; font-size:0.95rem; }
   #upload-overlay-subtext { font-size:0.85rem; color:#555; margin-top:6px; }
 </style>
+
+{{ presigned_video|json_script:"presigned-video" }}
+{{ presigned_imagen|json_script:"presigned-imagen" }}
 
 <script>
   
@@ -1035,87 +1041,178 @@
     }
   });
 
+  const LIMITE_MB_ARCHIVO_VIDEO = 2000;
+  const LIMITE_MB_ARCHIVO_IMAGEN = 50;
 
+  document.getElementById('id_video').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const maxSizeInBytes = LIMITE_MB_ARCHIVO_VIDEO * 1024 * 1024;
 
-
-
-
-
-// Variable para controlar si el formulario se está enviando
-let formSubmitting = false;
-
-document.getElementById("encuentroForm").addEventListener("submit", function (e) {
-  const galloPlaca = document.getElementById("galloHidden").value;
-
-  if (!galloPlaca) {
-    e.preventDefault();
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atención',
-      text: 'Debe seleccionar un gallo participante',
-      confirmButtonColor: '#0d6efd'
-    });
-    return;
-  }
-
-  // Si pasa todas las validaciones, mostrar overlay y bloquear cierre
-  if (this.checkValidity()) {
-    // Mostrar overlay
-    document.getElementById("upload-overlay").style.display = "block";
-    
-    // Activar bloqueo de cierre DESPUÉS de un pequeño delay
-    // Esto permite que el submit se complete antes de activar beforeunload
-    setTimeout(function() {
-      formSubmitting = true;
-    }, 100);
-  }
-});
-
-(function () {
-  'use strict';
-
-  var forms = document.querySelectorAll('.needs-validation');
-
-  Array.prototype.slice.call(forms).forEach(function (form) {
-    form.addEventListener('submit', function (event) {
-      if (!form.checkValidity() && document.getElementById("galloHidden").value) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
+    if (file && file.size > maxSizeInBytes) {
+        let mensaje = `El video seleccionado excede el límite de ${LIMITE_MB_ARCHIVO_VIDEO} mbs.`;
+        Swal.fire({ icon: 'error', title: 'Error', text: mensaje});
+        event.target.value = ""; 
+    }
   });
-})();
 
-// Bloquear el cierre de pestaña mientras se envía el formulario
-window.addEventListener('beforeunload', function (e) {
-  if (formSubmitting) {
-    e.preventDefault();
-    e.returnValue = '';
-    return '';
-  }
-});
+  document.getElementById('id_imagen_evento').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const maxSizeInBytes = LIMITE_MB_ARCHIVO_IMAGEN * 1024 * 1024;
 
-// Ocultar overlay si la página se recarga por algún motivo (navegación atrás, etc.)
-window.addEventListener('pageshow', function(event) {
-  formSubmitting = false;
-  document.getElementById("upload-overlay").style.display = "none";
-});
+    if (file && file.size > maxSizeInBytes) {
+        let mensaje = `La imagen seleccionada excede el límite de ${LIMITE_MB_ARCHIVO_IMAGEN} mbs.`;
+        Swal.fire({ icon: 'error', title: 'Error', text: mensaje});
+        event.target.value = ""; 
+    }
+  });
 
-// ...existing code...
-window.addEventListener('DOMContentLoaded', function() {
-  document.getElementById("upload-overlay").style.display = "none";
-});
-window.addEventListener('load', function() {
-  document.getElementById("upload-overlay").style.display = "none";
-});
-// ...existing code...
+  let formSubmitting = false;
+  const form = document.getElementById("encuentroForm");
 
+  form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const galloPlaca = document.getElementById("galloHidden").value;
 
+      if (!galloPlaca) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Atención',
+          text: 'Debe seleccionar un gallo participante',
+          confirmButtonColor: '#0d6efd'
+        });
+        return;
+      }
 
+      if (this.checkValidity()) {
+          document.getElementById("upload-overlay").style.display = "block";
+          formSubmitting = true;
 
+          let allUploadsOk = true;
+          const fileInputs = {
+              video: form.querySelector('input[name="video"]'),
+              imagen_evento: form.querySelector('input[name="imagen_evento"]')
+          };
+          
+          for (const [field, input] of Object.entries(fileInputs)) {
+              const file = input?.files[0];
+              if (file) {
+                  try {
+                      // Paso 1: Envía metadata a Django para obtener presigned PUT
+                      const formDataMeta = new FormData();
+                      formDataMeta.append('field_name', field);
+                      formDataMeta.append('filename', file.name);
+                      formDataMeta.append('content_type', file.type);
+                      formDataMeta.append('file_size', file.size);
 
+                      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+                      const responseMeta = await fetch('/get-presigned-put/', {
+                          method: 'POST',
+                          body: formDataMeta,
+                          headers: {
+                              'X-CSRFToken': csrfToken
+                          }
+                      });
+
+                      if (!responseMeta.ok) throw new Error('Failed to get presigned URL');
+                      const presigned = await responseMeta.json();
+
+                      const key = presigned.key;
+                      const presignedUrl = presigned.url;
+
+                      // Paso 2: Sube con PUT
+                      const xhr = new XMLHttpRequest();
+                      xhr.open('PUT', presignedUrl, true);
+                      xhr.setRequestHeader('Content-Type', file.type);
+                      xhr.setRequestHeader('x-amz-acl', 'public-read');
+
+                      xhr.upload.onprogress = (event) => {
+                          if (event.lengthComputable) {
+                              const percent = Math.round((event.loaded / event.total) * 100);
+                              document.getElementById('progress-bar').value = percent;
+                              document.getElementById('progress-text').textContent = `${percent}%`;
+                          }
+                      };
+
+                      await new Promise((resolve, reject) => {
+                          xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                              resolve();
+                            } else {
+                              reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+                            }
+                          };
+                          xhr.onerror = () => reject(new Error('Network error'));
+                          xhr.send(file);
+                      });
+
+                      let hidden = form.querySelector(`input[name="${field}_key"]`);
+                      if (!hidden) {
+                          hidden = document.createElement('input');
+                          hidden.type = 'hidden';
+                          hidden.name = `${field}_key`;
+                          form.appendChild(hidden);
+                      }
+                      hidden.value = key;
+
+                      input.remove();
+                  } catch (err) {
+                      allUploadsOk = false;
+                      console.error(`Error uploading ${field}:`, err);
+                      Swal.fire({ icon: 'error', title: 'Error', text: `Error subiendo ${field}: ${err.message}` });
+                  }
+              }
+          }
+
+          if (allUploadsOk) {
+              document.getElementById("upload-overlay").style.display = "none";
+              formSubmitting = false;
+              form.submit();
+          } else {
+              document.getElementById("upload-overlay").style.display = "none";
+              formSubmitting = false;
+          }
+      }
+  });
+
+  (function () {
+    'use strict';
+
+    var forms = document.querySelectorAll('.needs-validation');
+
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity() && document.getElementById("galloHidden").value) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+
+  // Bloquear el cierre de pestaña mientras se envía el formulario
+  window.addEventListener('beforeunload', function (e) {
+    if (formSubmitting) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
+  // Ocultar overlay si la página se recarga por algún motivo (navegación atrás, etc.)
+  window.addEventListener('pageshow', function(event) {
+    formSubmitting = false;
+    document.getElementById("upload-overlay").style.display = "none";
+  });
+
+  window.addEventListener('DOMContentLoaded', function() {
+    document.getElementById("upload-overlay").style.display = "none";
+  });
+  window.addEventListener('load', function() {
+    document.getElementById("upload-overlay").style.display = "none";
+  });
 
   // Luego de que cargue el DOM
   document.addEventListener('DOMContentLoaded', function () {

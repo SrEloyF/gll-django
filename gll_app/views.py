@@ -12,10 +12,70 @@ from django.urls import reverse
 from datetime import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import F, Value
-from django.db.models.functions import Coalesce
+from django.db.models import F
 import mimetypes
 from django.template.loader import render_to_string
+import boto3
+from botocore.exceptions import ClientError
+import time
+from django.conf import settings
+
+LIMITE_MB_ARCHIVO = 2000
+
+def generate_presigned_put(field_name, folder, filename, content_type, file_size):
+    s3 = boto3.client(
+        service_name=settings.R2_SERVICE_NAME,
+        region_name=settings.R2_REGION,
+        endpoint_url=settings.R2_ENDPOINT,
+        aws_access_key_id=settings.R2_ACCESS_KEY,
+        aws_secret_access_key=settings.R2_SECRET_KEY
+    )
+
+    timestamp = int(time.time())
+    name_no_tildes = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode('ASCII')
+    safe_name = name_no_tildes.replace(' ', '_')
+    key = f"{folder}/{timestamp}_{safe_name}" if folder else f"{timestamp}_{safe_name}"
+
+    params = {
+        'Bucket': settings.R2_BUCKET_NAME,
+        'Key': key,
+        'ACL': 'public-read',
+        'ContentType': content_type,
+        'ContentLength': file_size
+    }
+
+    try:
+        presigned_url = s3.generate_presigned_url(
+            ClientMethod='put_object',
+            Params=params,
+            ExpiresIn=3600  # 1 hora
+        )
+        return {'url': presigned_url, 'key': key, 'field_name': field_name}
+    except ClientError as e:
+        print(f"Error generating presigned PUT: {e}")
+        return None
+
+@csrf_exempt
+def get_presigned_put(request):
+    if request.method == 'POST':
+        field_name = request.POST.get('field_name')
+        folder = request.POST.get('folder', 'gll/encuentros')
+        filename = request.POST.get('filename')
+        content_type = request.POST.get('content_type')
+        file_size = int(request.POST.get('file_size', 0))
+
+        if file_size > LIMITE_MB_ARCHIVO * 1024 * 1024:
+            return JsonResponse({'error': f'El archivo excede el límite de {LIMITE_MB_ARCHIVO} MB.'}, status=400)
+
+        if not all([field_name, filename, content_type]):
+            return JsonResponse({'error': 'Missing parameters'}, status=400)
+
+        presigned = generate_presigned_put(field_name, folder, filename, content_type, file_size)
+        if presigned:
+            return JsonResponse(presigned)
+        else:
+            return JsonResponse({'error': 'Failed to generate presigned URL'}, status=500)
+    return JsonResponse({'error': 'Invalid method'}, status=405)
 
 def filtros(request):
     columna = request.GET.get('columna', '')
@@ -213,52 +273,80 @@ def upload_archivo_adicional(request, idGallo):
     """Vista AJAX para subir archivos adicionales"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
+
     try:
         gallo = Gallo.objects.get(pk=idGallo)
-        archivo = request.FILES.get('archivo')
-        
-        if not archivo:
-            return JsonResponse({'error': 'No se recibió ningún archivo'}, status=400)
-        
-        # Determinar el tipo de archivo
-        mime_type, _ = mimetypes.guess_type(archivo.name)
-        if mime_type:
-            if mime_type.startswith('image/'):
-                tipo = 'imagen'
-            elif mime_type.startswith('video/'):
-                tipo = 'video'
+        action = request.POST.get('action', 'get_presigned')
+
+        if action == 'get_presigned':
+            # Paso 1: Devolver presigned URL
+            filename = request.POST.get('filename')
+            content_type = request.POST.get('content_type')
+            file_size = int(request.POST.get('file_size', 0))
+
+            if file_size > LIMITE_MB_ARCHIVO * 1024 * 1024:
+                return JsonResponse({'error': f'El archivo excede el límite de {LIMITE_MB_ARCHIVO} MB.'}, status=400)
+
+            if not all([filename, content_type]):
+                return JsonResponse({'error': 'Faltan parámetros'}, status=400)
+
+            # Determinar tipo
+            mime_type, _ = mimetypes.guess_type(filename)
+            if mime_type:
+                if mime_type.startswith('image/'):
+                    tipo = 'imagen'
+                elif mime_type.startswith('video/'):
+                    tipo = 'video'
+                else:
+                    return JsonResponse({'error': 'Tipo de archivo no permitido'}, status=400)
             else:
-                return JsonResponse({'error': 'Tipo de archivo no permitido'}, status=400)
-        else:
-            # Fallback basado en extensión
-            ext = archivo.name.split('.')[-1].lower()
-            if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
-                tipo = 'imagen'
-            elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
-                tipo = 'video'
+                ext = filename.split('.')[-1].lower()
+                if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
+                    tipo = 'imagen'
+                elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
+                    tipo = 'video'
+                else:
+                    return JsonResponse({'error': 'Tipo de archivo no reconocido'}, status=400)
+
+            presigned = generate_presigned_put(
+                field_name='archivo',
+                folder='gll/archivos_adicionales',
+                filename=filename,
+                content_type=content_type,
+                file_size=file_size
+            )
+            if presigned:
+                return JsonResponse({**presigned, 'tipo': tipo})
             else:
-                return JsonResponse({'error': 'Tipo de archivo no reconocido'}, status=400)
-        
-        # Crear el registro de archivo adicional
-        archivo_adicional = ArchivosAdicionales()
-        archivo_adicional.content_object = gallo
-        archivo_adicional.tipo = tipo
-        archivo_adicional._request = request  # Para ImageKitField
-        archivo_adicional.archivo = archivo
-        archivo_adicional.save()
-        
-        return JsonResponse({
-            'success': True,
-            'id': archivo_adicional.id,
-            'url': archivo_adicional.archivo,
-            'tipo': tipo,
-            'nombre': archivo.name
-        })
-    
+                return JsonResponse({'error': 'No se pudo generar la URL presignada'}, status=500)
+
+        elif action == 'confirm':
+            # Paso 2: Crear registro tras upload exitoso
+            key = request.POST.get('key')
+            tipo = request.POST.get('tipo')
+            nombre = request.POST.get('nombre')
+
+            if not all([key, tipo, nombre]):
+                return JsonResponse({'error': 'Faltan parámetros para confirmar'}, status=400)
+
+            archivo_adicional = ArchivosAdicionales()
+            archivo_adicional.content_object = gallo
+            archivo_adicional.tipo = tipo
+            archivo_adicional.archivo = key
+            archivo_adicional.save()
+
+            return JsonResponse({
+                'success': True,
+                'id': archivo_adicional.id,
+                'url': archivo_adicional.archivo,
+                'tipo': tipo,
+                'nombre': nombre
+            })
+
     except Gallo.DoesNotExist:
         return JsonResponse({'error': 'Gallo no encontrado'}, status=404)
     except Exception as e:
+        print(f"DEBUG - Error en upload_archivo_adicional: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
@@ -312,7 +400,7 @@ def madres_modal_content(request):
 
 def crear(request):
     if request.method == 'POST':
-        form = GalloForm(request.POST, request.FILES)
+        form = GalloForm(request.POST)
         if form.is_valid():
             try:
                 gallo = form.save(commit=False)
@@ -325,8 +413,12 @@ def crear(request):
                 if placa_madre:
                     gallo.placaMadre_id = placa_madre
 
+                if 'nombre_img_key' in request.POST:
+                    gallo.nombre_img = request.POST['nombre_img_key']
+
                 gallo.save()
 
+                """
                 archivos = request.FILES.getlist('archivos_adicionales[]')
                 for archivo in archivos:
                     mime_type, _ = mimetypes.guess_type(archivo.name)
@@ -352,7 +444,8 @@ def crear(request):
                     archivo_adicional._request = request
                     archivo_adicional.archivo = archivo
                     archivo_adicional.save()
-
+                """
+                
                 return redirect('ver', idGallo=gallo.idGallo)
 
             except Exception as e:
@@ -383,7 +476,7 @@ def editar(request, idGallo):
         print("DEBUG - Files recibidos:", request.FILES)
         print("DEBUG - POST data:", request.POST)
 
-        form = GalloForm(request.POST, request.FILES, instance=gallo)
+        form = GalloForm(request.POST, instance=gallo)
         if form.is_valid():
             placa_padre = request.POST.get('placaPadre') or None
             placa_madre = request.POST.get('placaMadre') or None
@@ -395,8 +488,13 @@ def editar(request, idGallo):
                 gallo._request = request
                 gallo.placaPadre_id = placa_padre
                 gallo.placaMadre_id = placa_madre
+
+                if 'nombre_img_key' in request.POST:
+                    gallo.nombre_img = request.POST['nombre_img_key']
+
                 gallo.save()
 
+                """
                 archivos = request.FILES.getlist('archivos_adicionales[]')
                 print("DEBUG - Archivos adicionales encontrados:", len(archivos))
                 for archivo in archivos:
@@ -430,8 +528,11 @@ def editar(request, idGallo):
                         print(f"DEBUG - Archivo guardado exitosamente: {archivo.name}")
                     except Exception as e:
                         print(f"DEBUG - Error al guardar archivo {archivo.name}:", str(e))
+                """
 
                 return redirect('ver', idGallo=gallo.idGallo)
+        else:
+            print("Errores en el form:", form.errors.as_json())
     else:
         form = GalloForm(instance=gallo)
 
@@ -528,6 +629,10 @@ def crear_encuentro(request):
                 encuentro = form.save(commit=False)
                 encuentro._request = request
                 encuentro.gallo = gallo
+                if 'video_key' in request.POST:
+                    encuentro.video = request.POST['video_key']
+                if 'imagen_evento_key' in request.POST:
+                    encuentro.imagen_evento = request.POST['imagen_evento_key']
                 encuentro.save()
                 return redirect('ver_encuentro', pk=encuentro.idEncuentro)
             else:
@@ -681,6 +786,11 @@ def encuentro_form(request, pk=None):
                 encuentro = form.save(commit=False)
                 encuentro.gallo = gallo
                 encuentro._request = request
+                #print("Manejando keys:")
+                if 'video_key' in request.POST:
+                    encuentro.video = request.POST['video_key']
+                if 'imagen_evento_key' in request.POST:
+                    encuentro.imagen_evento = request.POST['imagen_evento_key']
                 print("Antes de save():")
                 print("video: ", encuentro.video or "No video")
                 print("imagen_evento: " , encuentro.imagen_evento)
