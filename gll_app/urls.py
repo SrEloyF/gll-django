@@ -63,4 +63,5 @@ urlpatterns = [
     path('upload-archivo-adicional/<int:idGallo>/', views.upload_archivo_adicional, name='upload_archivo_adicional'),
     path('delete-archivo-adicional/<int:archivo_id>/', views.delete_archivo_adicional, name='delete_archivo_adicional'),
     path('get-presigned-put/', views.get_presigned_put, name='get_presigned_put'),
+    path('update-nombre-img/<int:idGallo>/', views.update_nombre_img, name='update_nombre_img'),
 ]

@@ -398,71 +398,81 @@ def madres_modal_content(request):
     html = render_to_string('gll_app/madres_modal_content.html', {'madres': madres})
     return JsonResponse({'html': html})
 
-def crear(request):
+@csrf_exempt
+def update_nombre_img(request, idGallo):
     if request.method == 'POST':
-        form = GalloForm(request.POST)
+        gallo = get_object_or_404(Gallo, idGallo=idGallo)
+        key = request.POST.get('key')
+        if key:
+            gallo.nombre_img = key
+            gallo.save()
+            return JsonResponse({'success': True})
+        return JsonResponse({'success': False, 'error': 'No key provided'}, status=400)
+    return JsonResponse({'error': 'Invalid method'}, status=405)
+
+def crear(request):
+    print("DEBUG - Método de la solicitud:", request.method)
+
+    if request.method == 'POST':
+        print("DEBUG - CONTENT_TYPE:", request.META.get('CONTENT_TYPE'))
+        print("DEBUG - Datos POST recibidos:", request.POST)
+
+        form = GalloForm(request.POST, request.FILES)
+
+        if 'nombre_img' not in request.FILES:
+            form.fields['nombre_img'].required = False
+            print("DEBUG - No recibí nombre_img en request.FILES -> campo no requerido temporalmente")
+
+
         if form.is_valid():
+            print("DEBUG - El formulario es válido.")
+
             try:
                 gallo = form.save(commit=False)
                 gallo._request = request
+
                 placa_padre = request.POST.get('placaPadre') or None
                 placa_madre = request.POST.get('placaMadre') or None
 
+                print("DEBUG - placaPadre:", placa_padre)
+                print("DEBUG - placaMadre:", placa_madre)
+
                 if placa_padre:
-                    gallo.placaPadre_id = placa_padre  # si es FK
+                    gallo.placaPadre_id = placa_padre
                 if placa_madre:
                     gallo.placaMadre_id = placa_madre
 
-                if 'nombre_img_key' in request.POST:
-                    gallo.nombre_img = request.POST['nombre_img_key']
-
                 gallo.save()
 
-                """
-                archivos = request.FILES.getlist('archivos_adicionales[]')
-                for archivo in archivos:
-                    mime_type, _ = mimetypes.guess_type(archivo.name)
-                    if mime_type:
-                        if mime_type.startswith('image/'):
-                            tipo = 'imagen'
-                        elif mime_type.startswith('video/'):
-                            tipo = 'video'
-                        else:
-                            continue  # Saltar archivos no soportados
-                    else:
-                        ext = archivo.name.split('.')[-1].lower()
-                        if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
-                            tipo = 'imagen'
-                        elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
-                            tipo = 'video'
-                        else:
-                            continue
-                    
-                    archivo_adicional = ArchivosAdicionales()
-                    archivo_adicional.content_object = gallo
-                    archivo_adicional.tipo = tipo
-                    archivo_adicional._request = request
-                    archivo_adicional.archivo = archivo
-                    archivo_adicional.save()
-                """
-                
-                return redirect('ver', idGallo=gallo.idGallo)
+                print("DEBUG - Gallo guardado con ID:", gallo.idGallo)
+
+                response_data = {
+                    'success': True,
+                    'idGallo': gallo.idGallo,
+                    'redirect': reverse('ver', kwargs={'idGallo': gallo.idGallo})
+                }
+                return JsonResponse(response_data)
 
             except Exception as e:
-                print("DEBUG - Error saving:", str(e))  # Debug line
-                raise
+                print("DEBUG - Error al guardar el gallo:", str(e))
+                import traceback
+                traceback.print_exc()  # Imprime traza completa del error
+                return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
         else:
-            print(form.errors)
+            print("DEBUG - Formulario inválido:", form.errors.as_json())
+            return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
 
     else:
+        print("DEBUG - Solicitud GET recibida.")
         form = GalloForm()
 
     return render(
-        request, 'formulario.html', 
+        request, 'formulario.html',
         {
             'form': form,
-            }
-        )
+        }
+    )
 
 def ajax_valida_placa(request):
     placa = request.GET.get('placa', None)
@@ -470,22 +480,33 @@ def ajax_valida_placa(request):
     return JsonResponse({'exists': exists})
 
 def editar(request, idGallo):
+    print("ejecutando editar")
     gallo = get_object_or_404(Gallo, idGallo=idGallo)
-    if request.method == 'POST':
+    
+    print("DEBUG - Método HTTP:", request.method)
 
-        print("DEBUG - Files recibidos:", request.FILES)
+    if request.method == 'POST':
+        print("DEBUG - Se recibió un POST.")
+        print("DEBUG - Archivos recibidos:", request.FILES)
         print("DEBUG - POST data:", request.POST)
 
-        form = GalloForm(request.POST, instance=gallo)
+        # ¡IMPORTANTE! Asegúrate de pasar también request.FILES
+        form = GalloForm(request.POST, request.FILES, instance=gallo)
+
         if form.is_valid():
+            print("DEBUG - Formulario válido.")
+
             placa_padre = request.POST.get('placaPadre') or None
             placa_madre = request.POST.get('placaMadre') or None
 
+            print(f"DEBUG - placaPadre: {placa_padre}, placaMadre: {placa_madre}")
+
             if placa_padre and placa_padre == placa_madre:
+                print("ERROR - Padre y madre son iguales.")
                 messages.error(request, "Padre y madre no pueden ser el mismo.")
             else:
                 gallo = form.save(commit=False)
-                gallo._request = request
+                gallo._request = request  # ¿Lo necesitas para algún procesamiento posterior?
                 gallo.placaPadre_id = placa_padre
                 gallo.placaMadre_id = placa_madre
 
@@ -493,51 +514,19 @@ def editar(request, idGallo):
                     gallo.nombre_img = request.POST['nombre_img_key']
 
                 gallo.save()
-
-                """
-                archivos = request.FILES.getlist('archivos_adicionales[]')
-                print("DEBUG - Archivos adicionales encontrados:", len(archivos))
-                for archivo in archivos:
-                    print(f"DEBUG - Procesando archivo: {archivo.name}")
-                    try:
-                        mime_type, _ = mimetypes.guess_type(archivo.name)
-                        if mime_type:
-                            if mime_type.startswith('image/'):
-                                tipo = 'imagen'
-                            elif mime_type.startswith('video/'):
-                                tipo = 'video'
-                            else:
-                                print(f"DEBUG - Tipo MIME no soportado: {mime_type}")
-                                continue
-                        else:
-                            ext = archivo.name.split('.')[-1].lower()
-                            if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
-                                tipo = 'imagen'
-                            elif ext in ['mp4', 'avi', 'mov', 'webm', 'mkv']:
-                                tipo = 'video'
-                            else:
-                                print(f"DEBUG - Extensión no soportada: {ext}")
-                                continue
-                        
-                        archivo_adicional = ArchivosAdicionales()
-                        archivo_adicional.content_object = gallo
-                        archivo_adicional.tipo = tipo
-                        archivo_adicional._request = request
-                        archivo_adicional.archivo = archivo
-                        archivo_adicional.save()
-                        print(f"DEBUG - Archivo guardado exitosamente: {archivo.name}")
-                    except Exception as e:
-                        print(f"DEBUG - Error al guardar archivo {archivo.name}:", str(e))
-                """
-
+                print("DEBUG - Gallo guardado correctamente. Redirigiendo.")
                 return redirect('ver', idGallo=gallo.idGallo)
         else:
-            print("Errores en el form:", form.errors.as_json())
+            print("ERROR - Formulario inválido.")
+            print("Errores:", form.errors.as_json())
     else:
+        print("DEBUG - No es POST, es GET.")
+
         form = GalloForm(instance=gallo)
 
-    placa_padre = obtener_placa_madre_padre( gallo.idGallo, 'padre')
-    placa_madre = obtener_placa_madre_padre( gallo.idGallo, 'madre')
+    # Datos adicionales para contexto
+    placa_padre = obtener_placa_madre_padre(gallo.idGallo, 'padre')
+    placa_madre = obtener_placa_madre_padre(gallo.idGallo, 'madre')
 
     archivos_adicionales = gallo.archivos_adicionales.all()
     archivos_imagenes = archivos_adicionales.filter(tipo='imagen')
@@ -554,6 +543,8 @@ def editar(request, idGallo):
         'archivos_imagenes': archivos_imagenes,
         'archivos_videos': archivos_videos,
     }
+
+    print("DEBUG - Renderizando formulario con contexto.")
     return render(request, 'formulario.html', contexto)
 
 def obtener_placa_madre_padre(id_hijo, pariente):

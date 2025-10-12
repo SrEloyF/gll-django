@@ -117,7 +117,7 @@
           <div class="col-12 col-md-6">
             <div class="form-floating mb-3 position-relative">
               {{ form.peso }}
-              <label for="{{ form.peso.id_for_label }}">Peso (libras) <span class="text-danger">*</span></label>
+              <label for="{{ form.peso.id_for_label }}">Peso (libras)</label>
               {% if form.peso.errors %}
               <div class="invalid-feedback d-block">{{ form.peso.errors }}</div>
               {% endif %}
@@ -606,7 +606,6 @@
         });
     });
 
-
     function añadirEstado(selectId) {
       Swal.fire({
         title: 'Ingresa nuevo estado:',
@@ -942,34 +941,6 @@
     });
 
   });
-/*
-  // Búsqueda en el modal de Padre
-  document.getElementById('buscarPlacaPadre').addEventListener('input', function (e) {
-    const searchTerm = e.target.value.toLowerCase();
-    document.querySelectorAll('#modalPadre table tbody tr').forEach(row => {
-      const placa = row.querySelector('td:first-child').textContent.toLowerCase();
-      row.style.display = placa.includes(searchTerm) ? '' : 'none';
-    });
-  });
-
-  // Búsqueda en el modal de Madre
-  document.getElementById('buscarPlacaMadre').addEventListener('input', function (e) {
-    const searchTerm = e.target.value.toLowerCase();
-    document.querySelectorAll('#modalMadre table tbody tr').forEach(row => {
-      const placa = row.querySelector('td:first-child').textContent.toLowerCase();
-      row.style.display = placa.includes(searchTerm) ? '' : 'none';
-    });
-  });
-
-  // Opcional: limpiar búsqueda al abrir cada modal
-  document.getElementById('modalPadre').addEventListener('show.bs.modal', function () {
-    document.getElementById('buscarPlacaMadre').value = '';
-    document.querySelectorAll('#modalPadre table tbody tr').forEach(row => row.style.display = '');
-  });
-  document.getElementById('modalMadre').addEventListener('show.bs.modal', function () {
-    document.getElementById('buscarPlacaMadre').value = '';
-    document.querySelectorAll('#modalMadre table tbody tr').forEach(row => row.style.display = '');
-  });*/
 
   function abrirModalBuscarSelect(selectId, titulo, columna) {
     const filas = 8;
@@ -1357,11 +1328,8 @@
     syncInputFilesWithArray();
   }
 
-
-  let formSubmitting = false;
   document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('#mainForm');
-    const galloId = {{ form.instance.pk|default:0 }};
+    let galloId = {{ form.instance.pk|default:'null' }};
 
     function showOverlay(withProgress = true) {
       document.getElementById('upload-overlay').style.display = 'block';
@@ -1391,9 +1359,30 @@
       document.getElementById('progress-text').textContent = `${Math.round(percent)}%`;
     }
 
-    form.onsubmit = async function (e) {
-      e.preventDefault();
+    function showValidationErrors(errors) {
+      const errorData = JSON.parse(errors);
+      for (const field in errorData) {
+        const fieldElem = form.querySelector(`[name="${field}"]`);
+        if (fieldElem) {
+          let ul = fieldElem.parentNode.querySelector('ul.errorlist');
+          if (!ul) {
+            ul = document.createElement('ul');
+            ul.className = 'errorlist';
+            fieldElem.parentNode.appendChild(ul);
+          }
+          ul.innerHTML = '';
+          errorData[field].forEach(err => {
+            const li = document.createElement('li');
+            li.textContent = err.message;
+            ul.appendChild(li);
+          });
+        }
+      }
+    }
 
+    //# sourceURL=inline-script.js
+
+    form.onsubmit = async function (e) {
       if (form.dataset.uploading === '1') {
         console.warn('Ya hay una subida en curso — petición ignorada.');
         return;
@@ -1406,165 +1395,218 @@
       let totalBytes = 0;
       let uploadedBytes = 0;
 
-      // Contar total uploads para progreso global
+      // Contar total de bytes para progreso global
       const nombreImgFile = form.querySelector('input[name="nombre_img"]')?.files[0];
       if (nombreImgFile) totalBytes += nombreImgFile.size;
       archivosParaSubir.forEach(f => totalBytes += f.size);
       
+      try {
+        let redirectUrl = '';
+        const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+        
+        // CASO CREACIÓN: crear el objeto primero
+        if (galloId === null) {
+          e.preventDefault();
+          const disabledEls = Array.from(form.querySelectorAll('[disabled]'));
+          disabledEls.forEach(el => el.disabled = false);
 
-      // Manejar nombre_img
-      if (nombreImgFile) {
-        try {
-          const formDataMeta = new FormData();
-          formDataMeta.append('field_name', 'nombre_img');
-          formDataMeta.append('folder', 'gll/gallos');
-          formDataMeta.append('filename', nombreImgFile.name);
-          formDataMeta.append('content_type', nombreImgFile.type);
-          formDataMeta.append('file_size', nombreImgFile.size);
-
-          const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-          const responseMeta = await fetch('/get-presigned-put/', {
+          const fd = new FormData(form);
+          fd.delete('nombre_img');
+          fd.delete('archivos_adicionales[]');
+        
+          const response = await fetch(form.action, {
             method: 'POST',
-            body: formDataMeta,
+            body: fd,
             headers: { 'X-CSRFToken': csrfToken }
           });
 
-          if (!responseMeta.ok) throw new Error('Failed to get presigned URL');
-          const presigned = await responseMeta.json();
-
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', presigned.url, true);
-          xhr.setRequestHeader('Content-Type', nombreImgFile.type);
-          xhr.setRequestHeader('x-amz-acl', 'public-read');
-
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              let percent = ((uploadedBytes + event.loaded) / totalBytes) * 100;
-              updateProgress(percent);
+          if (!response.ok) {
+            const result = await response.json();
+            if (result.errors) {
+              hideOverlay();
+              showValidationErrors(result.errors);
+              throw new Error('Formulario inválido - verifique los campos');
+            } else {
+              const errorText = await response.text();
+              throw new Error(`Error creando Gallo: ${response.status} - ${errorText}`);
             }
-          };
+          }
+          
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Error creando Gallo');
 
-          await new Promise((resolve, reject) => {
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                uploadedBytes += nombreImgFile.size;
-                resolve();
-              } else {
-                reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+          galloId = result.idGallo;
+          redirectUrl = result.redirect;
+          console.log('Gallo creado con ID:', galloId);
+        } 
+        // CASO EDICIÓN: preparar URL de redirección
+        else {
+          redirectUrl = form.action; // O la URL que corresponda para edición
+        }
+
+        // Subir nombre_img si está presente
+        if (nombreImgFile) {
+          try {
+            const formDataMeta = new FormData();
+            formDataMeta.append('field_name', 'nombre_img');
+            formDataMeta.append('folder', 'gll/gallos');
+            formDataMeta.append('filename', nombreImgFile.name);
+            formDataMeta.append('content_type', nombreImgFile.type);
+            formDataMeta.append('file_size', nombreImgFile.size);
+
+            const responseMeta = await fetch('/get-presigned-put/', {
+              method: 'POST',
+              body: formDataMeta,
+              headers: { 'X-CSRFToken': csrfToken }
+            });
+
+            if (!responseMeta.ok) {
+              const errorText = await responseMeta.text();
+              throw new Error(`Error obteniendo presigned: ${responseMeta.status} - ${errorText}`);
+            }
+            const presigned = await responseMeta.json();
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', presigned.url, true);
+            xhr.setRequestHeader('Content-Type', nombreImgFile.type);
+            xhr.setRequestHeader('x-amz-acl', 'public-read');
+
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                let percent = ((uploadedBytes + event.loaded) / totalBytes) * 100;
+                updateProgress(percent);
               }
             };
-            xhr.onerror = () => reject(new Error('Network error'));
-            xhr.send(nombreImgFile);
-          });
 
-          // Agregar hidden con key para nombre_img
-          let hidden = form.querySelector('input[name="nombre_img_key"]');
-          if (!hidden) {
-            hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'nombre_img_key';
-            form.appendChild(hidden);
-          }
-          hidden.value = presigned.key;
+            await new Promise((resolve, reject) => {
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  uploadedBytes += nombreImgFile.size;
+                  resolve();
+                } else {
+                  reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+                }
+              };
+              xhr.onerror = () => reject(new Error('Network error'));
+              xhr.send(nombreImgFile);
+            });
 
-          form.querySelector('input[name="nombre_img"]').remove();
-        } catch (err) {
-          allUploadsOk = false;
-          console.error('Error uploading nombre_img:', err);
-          Swal.fire({ icon: 'error', title: 'Error', text: `Error subiendo imagen principal: ${err.message}` });
-        }
-      }
+            // Actualizar nombre_img en Gallo
+            const updateData = new FormData();
+            updateData.append('key', presigned.key);
+            const updateResponse = await fetch(`/update-nombre-img/${galloId}/`, {
+              method: 'POST',
+              body: updateData,
+              headers: { 'X-CSRFToken': csrfToken }
+            });
 
-      // Manejar archivos adicionales
-      for (let i = 0; i < archivosParaSubir.length; i++) {
-        const file = archivosParaSubir[i];
-        try {
-          const formDataMeta = new FormData();
-          formDataMeta.append('action', 'get_presigned');
-          formDataMeta.append('field_name', 'archivo');
-          formDataMeta.append('folder', 'gll/archivos_adicionales');
-          formDataMeta.append('filename', file.name);
-          formDataMeta.append('content_type', file.type);
-          formDataMeta.append('file_size', file.size);
-
-          const galloId = {{ form.instance.pk|default:"null" }};
-
-          const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-          const responseMeta = await fetch(`/upload-archivo-adicional/${galloId}/`, {
-            method: 'POST',
-            body: formDataMeta,
-            headers: { 'X-CSRFToken': csrfToken }
-          });
-
-          if (!responseMeta.ok) {
-            const errorText = await responseMeta.text(); // O .json() si sabes que es JSON
-            throw new Error(`Error del servidor: ${responseMeta.status} - ${errorText}`);
-          }
-          const presigned = await responseMeta.json();
-
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', presigned.url, true);
-          xhr.setRequestHeader('Content-Type', file.type);
-          xhr.setRequestHeader('x-amz-acl', 'public-read');
-
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              let percent = ((uploadedBytes + event.loaded) / totalBytes) * 100;
-              updateProgress(percent);
+            if (!updateResponse.ok) {
+              const errorText = await updateResponse.text();
+              throw new Error(`Error actualizando nombre_img: ${updateResponse.status} - ${errorText}`);
             }
-          };
+          } catch (err) {
+            allUploadsOk = false;
+            console.error('Error uploading nombre_img:', err);
+            Swal.fire({ icon: 'error', title: 'Error', text: `Error subiendo imagen principal: ${err.message}` });
+          }
+        }
 
-          await new Promise((resolve, reject) => {
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                uploadedBytes += file.size;
-                resolve();
-              } else {
-                reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+        // Subir archivos adicionales
+        for (let i = 0; i < archivosParaSubir.length; i++) {
+          const file = archivosParaSubir[i];
+          try {
+            const formDataMeta = new FormData();
+            formDataMeta.append('action', 'get_presigned');
+            formDataMeta.append('field_name', 'archivo');
+            formDataMeta.append('folder', 'gll/archivos_adicionales');
+            formDataMeta.append('filename', file.name);
+            formDataMeta.append('content_type', file.type);
+            formDataMeta.append('file_size', file.size);
+
+            const responseMeta = await fetch(`/upload-archivo-adicional/${galloId}/`, {
+              method: 'POST',
+              body: formDataMeta,
+              headers: { 'X-CSRFToken': csrfToken }
+            });
+
+            if (!responseMeta.ok) {
+              const errorText = await responseMeta.text();
+              throw new Error(`Error obteniendo presigned: ${responseMeta.status} - ${errorText}`);
+            }
+            const presigned = await responseMeta.json();
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', presigned.url, true);
+            xhr.setRequestHeader('Content-Type', file.type);
+            xhr.setRequestHeader('x-amz-acl', 'public-read');
+
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                let percent = ((uploadedBytes + event.loaded) / totalBytes) * 100;
+                updateProgress(percent);
               }
             };
-            xhr.onerror = () => reject(new Error('Network error'));
-            xhr.send(file);
-          });
 
-          // Confirmar creación
-          const confirmData = new FormData();
-          confirmData.append('action', 'confirm');
-          confirmData.append('key', presigned.key);
-          confirmData.append('tipo', presigned.tipo);
-          confirmData.append('nombre', file.name);
+            await new Promise((resolve, reject) => {
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  uploadedBytes += file.size;
+                  resolve();
+                } else {
+                  reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+                }
+              };
+              xhr.onerror = () => reject(new Error('Network error'));
+              xhr.send(file);
+            });
 
-          const confirmResponse = await fetch(`/upload-archivo-adicional/${galloId}/`, {
-            method: 'POST',
-            body: confirmData,
-            headers: { 'X-CSRFToken': csrfToken }
-          });
+            // Confirmar creación del archivo adicional
+            const confirmData = new FormData();
+            confirmData.append('action', 'confirm');
+            confirmData.append('key', presigned.key);
+            confirmData.append('tipo', presigned.tipo);
+            confirmData.append('nombre', file.name);
 
-          if (!confirmResponse.ok) throw new Error('Failed to confirm upload');
-          const confirmResult = await confirmResponse.json();
-          console.log(`Archivo adicional creado: ${confirmResult.nombre}`);
-        } catch (err) {
-          allUploadsOk = false;
-          console.error(`Error uploading archivo adicional ${file.name}:`, err);
-          Swal.fire({ icon: 'error', title: 'Error', text: `Error subiendo archivo adicional: ${err.message}` });
+            const confirmResponse = await fetch(`/upload-archivo-adicional/${galloId}/`, {
+              method: 'POST',
+              body: confirmData,
+              headers: { 'X-CSRFToken': csrfToken }
+            });
+
+            if (!confirmResponse.ok) {
+              const errorText = await confirmResponse.text();
+              throw new Error(`Error confirmando: ${confirmResponse.status} - ${errorText}`);
+            }
+            const confirmResult = await confirmResponse.json();
+            console.log(`Archivo adicional creado: ${confirmResult.nombre}`);
+          } catch (err) {
+            allUploadsOk = false;
+            console.error(`Error uploading archivo adicional ${file.name}:`, err);
+            Swal.fire({ icon: 'error', title: 'Error', text: `Error subiendo archivo adicional: ${err.message}` });
+          }
         }
-      }
 
-      archivosParaSubir = [];
+        archivosParaSubir = [];
+        form.dataset.uploading = '0';
 
-      form.dataset.uploading = '0';
-
-      if (allUploadsOk) {
+        if (allUploadsOk) {
+          hideOverlay();
+          console.log('Todo completo; redirigiendo...');
+          window.location.href = redirectUrl;
+        } else {
+          hideOverlay();
+        }
+      } catch (err) {
+        form.dataset.uploading = '0';
         hideOverlay();
-        console.log('Iniciando submit del form a Django...');
-        form.submit();
-      } else {
-        hideOverlay();
+        console.error('Error general:', err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
       }
     };
-  
-  });
+    
+    // fin
 
+  });
 
 // Para el modal de los padres
 document.addEventListener('DOMContentLoaded', function () {
@@ -1732,34 +1774,6 @@ document.addEventListener('DOMContentLoaded', function () {
   attachMadresPaginationListeners();
   attachMadreSelectListeners();
 });
-
-/*
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.getElementById('encuentroForm');
-  function showOverlay() {
-    document.getElementById('upload-overlay').style.display = 'block';
-    window.addEventListener('beforeunload', beforeUnloadHandler);
-    disableFormControls(true);
-  }
-  function hideOverlay() {
-    document.getElementById('upload-overlay').style.display = 'none';
-    window.removeEventListener('beforeunload', beforeUnloadHandler);
-    disableFormControls(false);
-  }
-  function beforeUnloadHandler(e) {
-    const confirmationMessage = 'Guardando datos, si sale la subida se cancelará.';
-    e.returnValue = confirmationMessage;
-    return confirmationMessage;
-  }
-  function disableFormControls(disable) {
-    const controls = form.querySelectorAll('input, button, select, textarea');
-    controls.forEach(c => c.disabled = disable);
-  }
-  form.addEventListener('submit', function () {
-    showOverlay();
-  });
-});
-*/
 
 </script>
 {% endblock %}
