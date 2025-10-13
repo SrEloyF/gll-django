@@ -364,7 +364,7 @@ def delete_archivo_adicional(request, archivo_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-registros_por_pagina = 2
+registros_por_pagina = 6
 
 def padres_modal_content(request):
     page = request.GET.get('page_padres', 1)
@@ -411,21 +411,21 @@ def update_nombre_img(request, idGallo):
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
 def crear(request):
-    print("DEBUG - Método de la solicitud:", request.method)
+    #print("DEBUG - Método de la solicitud:", request.method)
 
     if request.method == 'POST':
-        print("DEBUG - CONTENT_TYPE:", request.META.get('CONTENT_TYPE'))
-        print("DEBUG - Datos POST recibidos:", request.POST)
+        #print("DEBUG - CONTENT_TYPE:", request.META.get('CONTENT_TYPE'))
+        #print("DEBUG - Datos POST recibidos:", request.POST)
 
         form = GalloForm(request.POST, request.FILES)
 
         if 'nombre_img' not in request.FILES:
             form.fields['nombre_img'].required = False
-            print("DEBUG - No recibí nombre_img en request.FILES -> campo no requerido temporalmente")
+            #print("DEBUG - No recibí nombre_img en request.FILES -> campo no requerido temporalmente")
 
 
         if form.is_valid():
-            print("DEBUG - El formulario es válido.")
+            #print("DEBUG - El formulario es válido.")
 
             try:
                 gallo = form.save(commit=False)
@@ -434,8 +434,8 @@ def crear(request):
                 placa_padre = request.POST.get('placaPadre') or None
                 placa_madre = request.POST.get('placaMadre') or None
 
-                print("DEBUG - placaPadre:", placa_padre)
-                print("DEBUG - placaMadre:", placa_madre)
+                #print("DEBUG - placaPadre:", placa_padre)
+                #print("DEBUG - placaMadre:", placa_madre)
 
                 if placa_padre:
                     gallo.placaPadre_id = placa_padre
@@ -444,7 +444,7 @@ def crear(request):
 
                 gallo.save()
 
-                print("DEBUG - Gallo guardado con ID:", gallo.idGallo)
+                #print("DEBUG - Gallo guardado con ID:", gallo.idGallo)
 
                 response_data = {
                     'success': True,
@@ -454,17 +454,17 @@ def crear(request):
                 return JsonResponse(response_data)
 
             except Exception as e:
-                print("DEBUG - Error al guardar el gallo:", str(e))
-                import traceback
-                traceback.print_exc()  # Imprime traza completa del error
+                #print("DEBUG - Error al guardar el gallo:", str(e))
+                #import traceback
+                #traceback.print_exc()  # Imprime traza completa del error
                 return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
         else:
-            print("DEBUG - Formulario inválido:", form.errors.as_json())
+            #print("DEBUG - Formulario inválido:", form.errors.as_json())
             return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
 
     else:
-        print("DEBUG - Solicitud GET recibida.")
+        #print("DEBUG - Solicitud GET recibida.")
         form = GalloForm()
 
     return render(
@@ -480,29 +480,29 @@ def ajax_valida_placa(request):
     return JsonResponse({'exists': exists})
 
 def editar(request, idGallo):
-    print("ejecutando editar")
+    #print("ejecutando editar")
     gallo = get_object_or_404(Gallo, idGallo=idGallo)
     
-    print("DEBUG - Método HTTP:", request.method)
+    #print("DEBUG - Método HTTP:", request.method)
 
     if request.method == 'POST':
-        print("DEBUG - Se recibió un POST.")
-        print("DEBUG - Archivos recibidos:", request.FILES)
-        print("DEBUG - POST data:", request.POST)
+        #print("DEBUG - Se recibió un POST.")
+        #print("DEBUG - Archivos recibidos:", request.FILES)
+        #print("DEBUG - POST data:", request.POST)
 
         # ¡IMPORTANTE! Asegúrate de pasar también request.FILES
         form = GalloForm(request.POST, request.FILES, instance=gallo)
 
         if form.is_valid():
-            print("DEBUG - Formulario válido.")
+            #print("DEBUG - Formulario válido.")
 
             placa_padre = request.POST.get('placaPadre') or None
             placa_madre = request.POST.get('placaMadre') or None
 
-            print(f"DEBUG - placaPadre: {placa_padre}, placaMadre: {placa_madre}")
+            #print(f"DEBUG - placaPadre: {placa_padre}, placaMadre: {placa_madre}")
 
             if placa_padre and placa_padre == placa_madre:
-                print("ERROR - Padre y madre son iguales.")
+                #print("ERROR - Padre y madre son iguales.")
                 messages.error(request, "Padre y madre no pueden ser el mismo.")
             else:
                 gallo = form.save(commit=False)
@@ -514,13 +514,11 @@ def editar(request, idGallo):
                     gallo.nombre_img = request.POST['nombre_img_key']
 
                 gallo.save()
-                print("DEBUG - Gallo guardado correctamente. Redirigiendo.")
+                #print("DEBUG - Gallo guardado correctamente. Redirigiendo.")
                 return redirect('ver', idGallo=gallo.idGallo)
         else:
-            print("ERROR - Formulario inválido.")
+            #print("ERROR - Formulario inválido.")
             print("Errores:", form.errors.as_json())
-    else:
-        print("DEBUG - No es POST, es GET.")
 
         form = GalloForm(instance=gallo)
 
@@ -544,7 +542,7 @@ def editar(request, idGallo):
         'archivos_videos': archivos_videos,
     }
 
-    print("DEBUG - Renderizando formulario con contexto.")
+    #print("DEBUG - Renderizando formulario con contexto.")
     return render(request, 'formulario.html', contexto)
 
 def obtener_placa_madre_padre(id_hijo, pariente):
@@ -602,7 +600,6 @@ def crear_encuentro(request):
         if form.is_valid():
             print("formulario valido")
         else:
-            print("errores")
             print(form.errors)
 
         id_gallo = request.POST.get('gallo')
@@ -627,9 +624,9 @@ def crear_encuentro(request):
                 encuentro.save()
                 return redirect('ver_encuentro', pk=encuentro.idEncuentro)
             else:
-                print("errores") #no se imprime esto
+                #print("errores") #no se imprime esto
                 print(form.errors)
-                print("Gallo: ", gallo)
+                #print("Gallo: ", gallo)
 
     else:
         form = EncuentroForm()
@@ -754,15 +751,13 @@ def encuentro_form(request, pk=None):
         titulo = "Nuevo Encuentro"
 
     if request.method == 'POST':
-        print("FILES recibidos:", request.FILES)   
+        #print("FILES recibidos:", request.FILES)   
         form = EncuentroForm(request.POST, request.FILES, instance=encuentro)
         id_gallo = request.POST.get('gallo')
-        print("ID Gallo:", id_gallo)
+        #print("ID Gallo:", id_gallo)
 
         if not form.is_valid():
             print("Errores en el form:", form.errors.as_json()) 
-        else:
-            print("Form válido")
 
         if not id_gallo:
             form.add_error(None, "Debe seleccionar un gallo participante.")
@@ -782,17 +777,17 @@ def encuentro_form(request, pk=None):
                     encuentro.video = request.POST['video_key']
                 if 'imagen_evento_key' in request.POST:
                     encuentro.imagen_evento = request.POST['imagen_evento_key']
-                print("Antes de save():")
-                print("video: ", encuentro.video or "No video")
-                print("imagen_evento: " , encuentro.imagen_evento)
+                #print("Antes de save():")
+                #print("video: ", encuentro.video or "No video")
+                #print("imagen_evento: " , encuentro.imagen_evento)
                 encuentro.save()
-                print("Después de save():")
-                print("video: ", encuentro.video or "No video")
-                print("imagen_evento: " , encuentro.imagen_evento)
+                #print("Después de save():")
+                #print("video: ", encuentro.video or "No video")
+                #print("imagen_evento: " , encuentro.imagen_evento)
                 return redirect('ver_encuentro', pk=encuentro.idEncuentro)
             else:
                 print("Errores en el form:", form.errors.as_json()) 
-                print("Gallo: ", gallo)
+                #print("Gallo: ", gallo)
     else:
         form = EncuentroForm(instance=encuentro)
 

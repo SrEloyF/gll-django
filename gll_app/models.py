@@ -73,7 +73,7 @@ class CloudflareR2Field(models.CharField):
                 aws_secret_access_key=R2_SECRET_KEY
             )
             s3.delete_object(Bucket=R2_BUCKET, Key=key)
-            print(f"DEBUG - Deleted {key} from R2")
+            #print(f"DEBUG - Deleted {key} from R2")
         except Exception as e:
             print(f"DEBUG - Error deleting {key} from R2: {e}")
 
@@ -118,7 +118,7 @@ class CloudflareR2Field(models.CharField):
 
         if uploaded_file and hasattr(uploaded_file, 'read'):
             try:
-                print(f"DEBUG - Tamaño del archivo recibido: {uploaded_file.size / 1024:.2f} KB")
+                #print(f"DEBUG - Tamaño del archivo recibido: {uploaded_file.size / 1024:.2f} KB")
                 timestamp = int(time.time())
                 original_name = getattr(uploaded_file, 'name', f'file_{timestamp}')
                 name_no_tildes = unicodedata.normalize('NFKD', original_name).encode('ASCII', 'ignore').decode('ASCII')
@@ -140,7 +140,7 @@ class CloudflareR2Field(models.CharField):
 
                 model_instance.__dict__[self.attname] = key
 
-                print(f"DEBUG - Uploaded to R2, key: {key}")
+                #print(f"DEBUG - Uploaded to R2, key: {key}")
 
                 if old_key and old_key != key:
                     other_refs = model_instance.__class__._default_manager.filter(**{self.attname: old_db_value}).exclude(pk=model_instance.pk).exists()
@@ -160,10 +160,9 @@ class CloudflareR2Field(models.CharField):
 
         # Nueva condición para keys pre-subidas (client-side): Guardar y borrar old si aplica
         if not uploaded_file and current_value and not current_value.startswith('http') and current_value != "":
-            print("Se llegó al nuevo if")
             new_key = current_value  # La key pre-subida
             model_instance.__dict__[self.attname] = new_key
-            print(f"DEBUG - Usando key pre-subida: {new_key}")
+            #print(f"DEBUG - Usando key pre-subida: {new_key}")
 
             # Agregado: Borrar la old_key si es diferente y no tiene refs
             if old_key and old_key != new_key:
@@ -226,9 +225,9 @@ class ImageKitField(models.CharField):
 
     def pre_save(self, model_instance, add):
         file = getattr(model_instance, self.attname)
-        print(f"DEBUG - Pre save called for {self.attname}")
-        print(f"DEBUG - File type: {type(file)}")
-        print(f"DEBUG - File value: {file}")
+        #print(f"DEBUG - Pre save called for {self.attname}")
+        #print(f"DEBUG - File type: {type(file)}")
+        #print(f"DEBUG - File value: {file}")
 
         if not file:
             return file
@@ -264,9 +263,9 @@ class ImageKitField(models.CharField):
                     'Authorization': f'Basic {auth}'
                 }
 
-                print(f"DEBUG - Making request to ImageKit")
-                print(f"DEBUG - Headers: {headers}")
-                print(f"DEBUG - Data: {data}")
+                #print(f"DEBUG - Making request to ImageKit")
+                #print(f"DEBUG - Headers: {headers}")
+                #print(f"DEBUG - Data: {data}")
 
                 response = requests.post(
                     'https://api.imagekit.io/v1/files/upload',
@@ -275,8 +274,8 @@ class ImageKitField(models.CharField):
                     headers=headers
                 )
 
-                print(f"DEBUG - Response status: {response.status_code}")
-                print(f"DEBUG - Response body: {response.text}")
+                #print(f"DEBUG - Response status: {response.status_code}")
+                #print(f"DEBUG - Response body: {response.text}")
 
                 if response.status_code == 200:
                     result = response.json()

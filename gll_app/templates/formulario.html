@@ -1387,6 +1387,45 @@
         console.warn('Ya hay una subida en curso — petición ignorada.');
         return;
       }
+
+      const requiredFields = form.querySelectorAll('[required]');
+      let hasEmpty = false;
+
+      requiredFields.forEach(field => {
+        if (!field.value || (field.type === 'file' && field.files.length === 0)) {
+          hasEmpty = true;
+        }
+      });
+
+      if (hasEmpty) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Atención: Complete el formulario',
+          html: 'Algunos valores obligatorios del formulario no se han establecido correctamente.<br>Por favor, complételos.',
+          confirmButtonColor: '#0d6efd'
+        });
+        return;
+      }
+
+      if (galloId !== null) {
+        const padreId = document.getElementById("inputPadre").value;
+        const madreId = document.getElementById("inputMadre").value;
+
+        if (padreId === galloId.toString() || madreId === galloId.toString()) {
+          e.preventDefault();
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'El padre o madre seleccionado no debe ser igual al gallo que se está modificando.',
+            confirmButtonColor: '#0d6efd'
+          });
+
+          return;
+        }
+      }
+
       form.dataset.uploading = '1';
 
       showOverlay(true);
