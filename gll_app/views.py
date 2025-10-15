@@ -480,29 +480,29 @@ def ajax_valida_placa(request):
     return JsonResponse({'exists': exists})
 
 def editar(request, idGallo):
-    print("ejecutando editar")
+    #print("ejecutando editar")
     gallo = get_object_or_404(Gallo, idGallo=idGallo)
     
-    print("DEBUG - Método HTTP:", request.method)
+    #print("DEBUG - Método HTTP:", request.method)
 
     if request.method == 'POST':
-        print("DEBUG - Se recibió un POST.")
-        print("DEBUG - Archivos recibidos:", request.FILES)
-        print("DEBUG - POST data:", request.POST)
+        #print("DEBUG - Se recibió un POST.")
+        #print("DEBUG - Archivos recibidos:", request.FILES)
+        #print("DEBUG - POST data:", request.POST)
 
         # ¡IMPORTANTE! Asegúrate de pasar también request.FILES
         form = GalloForm(request.POST, request.FILES, instance=gallo)
 
         if form.is_valid():
-            print("DEBUG - Formulario válido.")
+            #print("DEBUG - Formulario válido.")
 
             placa_padre = request.POST.get('placaPadre') or None
             placa_madre = request.POST.get('placaMadre') or None
 
-            print(f"DEBUG - placaPadre: {placa_padre}, placaMadre: {placa_madre}")
+            #print(f"DEBUG - placaPadre: {placa_padre}, placaMadre: {placa_madre}")
 
             if placa_padre and placa_padre == placa_madre:
-                print("ERROR - Padre y madre son iguales.")
+                #print("ERROR - Padre y madre son iguales.")
                 messages.error(request, "Padre y madre no pueden ser el mismo.")
             else:
                 gallo = form.save(commit=False)
@@ -514,7 +514,7 @@ def editar(request, idGallo):
                     gallo.nombre_img = request.POST['nombre_img_key']
 
                 gallo.save()
-                print("DEBUG - Gallo guardado correctamente. Redirigiendo.")
+                #print("DEBUG - Gallo guardado correctamente. Redirigiendo.")
                 is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
                 if is_ajax:
                     return JsonResponse({
@@ -523,11 +523,11 @@ def editar(request, idGallo):
                         'redirect': reverse('ver', kwargs={'idGallo': gallo.idGallo})
                     })
                 else:
-                    print("DEBUG - Redirigiendo (no AJAX).")
+                    #print("DEBUG - Redirigiendo (no AJAX).")
                     return redirect('ver', idGallo=gallo.idGallo)
         else:
-            print("ERROR - Formulario inválido.")
-            print("Errores:", form.errors.as_json())
+            #print("ERROR - Formulario inválido.")
+            #print("Errores:", form.errors.as_json())
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if is_ajax:
                 return JsonResponse({
@@ -557,7 +557,7 @@ def editar(request, idGallo):
         'archivos_videos': archivos_videos,
     }
 
-    print("DEBUG - Renderizando formulario con contexto.")
+    #print("DEBUG - Renderizando formulario con contexto.")
     return render(request, 'formulario.html', contexto)
 
 def obtener_placa_madre_padre(id_hijo, pariente):
