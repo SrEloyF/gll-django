@@ -114,7 +114,15 @@
         <div class="tab-pane fade" id="imagen-content" role="tabpanel" aria-labelledby="imagen-tab">
           {% if encuentro.imagen_evento %}
             <div class="text-center mb-3">
-              <img src="{{ encuentro.imagen_evento }}" alt="Imagen del Encuentro" class="img-fluid rounded shadow-sm mb-2" style="max-height: 400px;" loading="lazy">
+              <img 
+                src="{{ encuentro.imagen_evento }}" 
+                alt="Imagen del Encuentro" 
+                class="img-fluid rounded shadow-sm mb-2" 
+                style="max-height: 400px; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 200px;"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+                onload="this.style.background='none';"
+              />
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="text-muted small">

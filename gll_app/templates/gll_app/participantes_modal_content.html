@@ -33,7 +33,17 @@
           <td>{{ gallo.sexo }}</td>
           <td>
             {% if gallo.nombre_img %}
-            <img src="{{ gallo.nombre_img }}" alt="img{{ gallo.idGallo }}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
+            <img 
+              src="{{ gallo.nombre_img }}" 
+              alt="Imagen del gallo {{ gallo.idGallo }}" 
+              class="rounded shadow-sm" 
+              width="40" 
+              height="40" 
+              style="object-fit: cover; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 40px;"
+              loading="lazy"
+              onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+              onload="this.style.background='none';"
+            />
             {% endif %}
           </td>
         </tr>

@@ -113,7 +113,17 @@
               </div>
             </div>
             {% if gallo.nombre_img %}
-            <img src="{{ gallo.nombre_img }}" alt="Imagen" class="rounded" width="50" height="50" style="object-fit: cover;">
+            <img 
+              src="{{ gallo.nombre_img }}" 
+              alt="Imagen del gallo {{ gallo.nroPlaca }}" 
+              class="rounded shadow-sm img-fluid" 
+              width="50" 
+              height="50" 
+              style="object-fit: cover; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 50px;"
+              loading="lazy"
+              onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+              onload="this.style.background='none';"
+            />
             {% endif %}
           </div>
           
@@ -295,8 +305,17 @@
               </td>
               <td class="text-center">
                 {% if gallo.nombre_img %}
-                  <img src="{{ gallo.nombre_img }}" alt="gallo{{ gallo.idGallo }}" 
-                       class="rounded shadow-sm" width="40" height="40" style="object-fit: cover;">
+                  <img 
+                    src="{{ gallo.nombre_img }}" 
+                    alt="Imagen del gallo {{ gallo.idGallo }}" 
+                    class="rounded shadow-sm img-fluid" 
+                    width="40" 
+                    height="40" 
+                    style="object-fit: cover; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 40px;"
+                    loading="lazy"
+                    onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+                    onload="this.style.background='none';"
+                  />
                 {% else %}
                   <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                        style="width: 40px; height: 40px;">

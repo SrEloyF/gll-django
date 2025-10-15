@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}Detalles del Gallo{% endblock %}
 
 {% block content %}
@@ -25,7 +27,12 @@
         <div class="col-lg-4 text-center">
           <div class="position-relative mb-3">
             {% if gallo.nombre_img %}
-              <img src="{{ gallo.nombre_img }}" class="img-fluid rounded shadow-sm" alt="Imagen del gallo {{ gallo.nroPlaca }}">
+              <img src="{{ gallo.nombre_img }}" class="img-fluid rounded shadow-sm" alt="Imagen del gallo {{ gallo.nroPlaca }}" 
+                loading="lazy"
+                style="background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 180px;"
+                onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+                onload="this.style.background='none';"
+              >
               <div class="position-absolute bottom-0 end-0">
                 <span class="badge rounded-pill bg-dark p-2">
                   <i class="bi bi-camera-fill me-1"></i>Foto
@@ -347,11 +354,15 @@
                     {% if archivo.tipo == 'imagen' %}
                     <div class="col-6 col-md-4 col-lg-3">
                       <div class="card h-100 img-section">
-                        <img src="{{ archivo.archivo }}" 
-                            class="card-img-top" 
-                            alt="Imagen adicional"
-                            style="height: 160px; object-fit: cover;"
-                            loading="lazy">
+                        <img 
+                          src="{{ archivo.archivo }}" 
+                          class="card-img-top shadow-sm" 
+                          alt="Imagen adicional"
+                          style="height: 160px; object-fit: cover; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 160px;"
+                          loading="lazy"
+                          onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+                          onload="this.style.background='none';"
+                        />
                         <div class="card-footer p-2 text-center bg-light">
                           <small class="text-muted">
                             {{ archivo.fecha_creacion|date:"d/m/Y H:i" }}
@@ -522,6 +533,13 @@
     const imagenesSeccion = document.querySelectorAll('.img-section img');
     imagenesSeccion.forEach(function(img) {
         img.style.cursor = 'pointer';
+        img.addEventListener('mouseenter', () => {
+            img.style.filter = 'brightness(80%)';
+            img.style.transition = 'filter 0.3s ease';
+        });
+        img.addEventListener('mouseleave', () => {
+            img.style.filter = 'brightness(100%)';
+        });
         img.addEventListener('dblclick', function() {
             abrirModal(this.src);
         });

@@ -33,7 +33,17 @@
             <td>{{ madre.color }}</td>
             <td>
               {% if madre.nombre_img %}
-              <img src="{{ madre.nombre_img }}" alt="img{{ madre.idGallo }}" class="rounded" width="40" height="40" style="object-fit: cover;" loading="lazy">
+              <img 
+                src="{{ madre.nombre_img }}" 
+                alt="Imagen de la madre {{ madre.idGallo }}" 
+                class="rounded shadow-sm" 
+                width="40" 
+                height="40" 
+                style="object-fit: cover; background: url('/static/gll_app/loader.svg') center center no-repeat; min-height: 40px;"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/static/gll_app/no-image.svg';"
+                onload="this.style.background='none';"
+              />
               {% endif %}
             </td>
             <td class="text-end">
